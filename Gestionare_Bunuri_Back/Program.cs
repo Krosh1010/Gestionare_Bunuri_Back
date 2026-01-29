@@ -1,5 +1,8 @@
+﻿using Gestionare_Bunuri_Back.Middleware;
 using Infrastructure.DataBase;
 using Microsoft.EntityFrameworkCore;
+using Application.Abstraction;
+using Application.User;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +16,11 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<AppDbContext>(options => options
      .UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<Hash>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ISpaceService, SpaceService>();
+builder.Services.AddScoped<IAssetService, AssetService>();
 
 builder.Services.AddCors(option =>
 {
@@ -35,6 +43,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("Policy");
+
+app.UseAuthentication();
+
+app.UseMiddleware<JwtMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();

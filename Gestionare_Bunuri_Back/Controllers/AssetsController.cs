@@ -1,9 +1,5 @@
 ﻿using Domain.AssetDto;
-using Domain.DbTables;
-using Domain.AssetDto;
-using Infrastructure.DataBase;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Gestionare_Bunuri_Back.Controllers
 {
@@ -11,88 +7,53 @@ namespace Gestionare_Bunuri_Back.Controllers
     [Route("api/[controller]")]
     public class AssetsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IAssetService _assetService;
 
-        public AssetsController(AppDbContext context)
+        public AssetsController(IAssetService assetService)
         {
-            _context = context;
+            _assetService = assetService;
         }
 
-        // CREATE
         [HttpPost]
         public async Task<ActionResult<AssetReadDto>> CreateAsset([FromBody] AssetCreateDto dto)
         {
-            var asset = new AssetTable
-            {
-                SpaceId = dto.SpaceId,
-                Name = dto.Name,
-                Category = dto.Category,
-                Value = dto.Value,
-                PurchaseDate = dto.PurchaseDate,
-                Description = dto.Description,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.Assets.Add(asset);
-            await _context.SaveChangesAsync();
-
-            var result = new AssetReadDto
-            {
-                Id = asset.Id,
-                SpaceId = asset.SpaceId,
-                Name = asset.Name,
-                Category = asset.Category,
-                Value = asset.Value,
-                PurchaseDate = asset.PurchaseDate,
-                Description = asset.Description,
-                CreatedAt = asset.CreatedAt
-            };
-
-            return CreatedAtAction(nameof(GetAssetById), new { id = asset.Id }, result);
+            var result = await _assetService.CreateAssetAsync(dto);
+            return CreatedAtAction(nameof(GetAssetById), new { id = result.Id }, result);
         }
 
-        // READ ALL
         [HttpGet]
         public async Task<ActionResult<IEnumerable<AssetReadDto>>> GetAssets()
         {
-            var assets = await _context.Assets
-                .Select(asset => new AssetReadDto
-                {
-                    Id = asset.Id,
-                    SpaceId = asset.SpaceId,
-                    Name = asset.Name,
-                    Category = asset.Category,
-                    Value = asset.Value,
-                    PurchaseDate = asset.PurchaseDate,
-                    Description = asset.Description,
-                    CreatedAt = asset.CreatedAt
-                })
-                .ToListAsync();
-
+            var assets = await _assetService.GetAssetsAsync();
             return Ok(assets);
         }
 
-        // READ BY ID
         [HttpGet("{id}")]
         public async Task<ActionResult<AssetReadDto>> GetAssetById(int id)
         {
-            var asset = await _context.Assets.FindAsync(id);
+            var asset = await _assetService.GetAssetByIdAsync(id);
             if (asset == null)
                 return NotFound();
+            return Ok(asset);
+        }
+        [HttpGet("my")]
+        public async Task<ActionResult<IEnumerable<AssetReadDto>>> GetMyAssets()
+        {
+            var userIdString = HttpContext.Items["UserId"] as string;
+            if (string.IsNullOrEmpty(userIdString))
+                return Unauthorized();
 
-            var dto = new AssetReadDto
-            {
-                Id = asset.Id,
-                SpaceId = asset.SpaceId,
-                Name = asset.Name,
-                Category = asset.Category,
-                Value = asset.Value,
-                PurchaseDate = asset.PurchaseDate,
-                Description = asset.Description,
-                CreatedAt = asset.CreatedAt
-            };
-
-            return Ok(dto);
+            int userId = int.Parse(userIdString);
+            var assets = await _assetService.GetAssetsByUserIdAsync(userId);
+            return Ok(assets);
+        }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAsset(int id)
+        {
+            var deleted = await _assetService.DeleteAssetAsync(id);
+            if (!deleted)
+                return NotFound();
+            return NoContent();
         }
     }
 }
