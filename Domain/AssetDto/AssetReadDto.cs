@@ -10,6 +10,7 @@ namespace Domain.AssetDto
     {
         public int Id { get; set; }
         public int SpaceId { get; set; }
+        public string SpaceName { get; set; } = null!;
         public string Name { get; set; } = null!;
         public string? Category { get; set; }
         public decimal Value { get; set; }

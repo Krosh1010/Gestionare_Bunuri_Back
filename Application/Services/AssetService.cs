@@ -29,10 +29,14 @@ public class AssetService : IAssetService
         _context.Assets.Add(asset);
         await _context.SaveChangesAsync();
 
+        // Încarcă Space pentru a obține numele
+        var space = await _context.Spaces.FindAsync(asset.SpaceId);
+
         return new AssetReadDto
         {
             Id = asset.Id,
             SpaceId = asset.SpaceId,
+            SpaceName = space?.Name ?? string.Empty, // <-- Adaugă această linie
             Name = asset.Name,
             Category = asset.Category,
             Value = asset.Value,
@@ -42,31 +46,17 @@ public class AssetService : IAssetService
         };
     }
 
-    public async Task<IEnumerable<AssetReadDto>> GetAssetsAsync()
-    {
-        return await _context.Assets
-            .Select(asset => new AssetReadDto
-            {
-                Id = asset.Id,
-                SpaceId = asset.SpaceId,
-                Name = asset.Name,
-                Category = asset.Category,
-                Value = asset.Value,
-                PurchaseDate = asset.PurchaseDate,
-                Description = asset.Description,
-                CreatedAt = asset.CreatedAt
-            })
-            .ToListAsync();
-    }
 
     public async Task<IEnumerable<AssetReadDto>> GetAssetsByUserIdAsync(int userId)
     {
         return await _context.Assets
+            .Include(asset => asset.Space) // <-- Adaugă Include
             .Where(asset => asset.Space.OwnerId == userId)
             .Select(asset => new AssetReadDto
             {
                 Id = asset.Id,
                 SpaceId = asset.SpaceId,
+                SpaceName = asset.Space.Name, // <-- Adaugă această linie
                 Name = asset.Name,
                 Category = asset.Category,
                 Value = asset.Value,
@@ -79,7 +69,10 @@ public class AssetService : IAssetService
 
     public async Task<AssetReadDto?> GetAssetByIdAsync(int id)
     {
-        var asset = await _context.Assets.FindAsync(id);
+        var asset = await _context.Assets
+            .Include(a => a.Space) // <-- Adaugă Include
+            .FirstOrDefaultAsync(a => a.Id == id);
+
         if (asset == null)
         {
             return null;
@@ -89,6 +82,7 @@ public class AssetService : IAssetService
         {
             Id = asset.Id,
             SpaceId = asset.SpaceId,
+            SpaceName = asset.Space.Name, // <-- Adaugă această linie
             Name = asset.Name,
             Category = asset.Category,
             Value = asset.Value,
@@ -106,5 +100,46 @@ public class AssetService : IAssetService
         _context.Assets.Remove(asset);
         await _context.SaveChangesAsync();
         return true;
+    }
+    public async Task<AssetReadDto?> PatchAssetAsync(int assetId, AssetUpdateDto dto)
+    {
+        var asset = await _context.Assets.Include(a => a.Space).FirstOrDefaultAsync(a => a.Id == assetId);
+        if (asset == null)
+            return null;
+
+        if (dto.SpaceId.HasValue && dto.SpaceId.Value != asset.SpaceId)
+        {
+            asset.SpaceId = dto.SpaceId.Value;
+            // Reîncarcă Space pentru noul SpaceId
+            asset.Space = await _context.Spaces.FindAsync(dto.SpaceId.Value);
+        }
+        if (dto.Name != null)
+            asset.Name = dto.Name;
+        if (dto.Category != null)
+            asset.Category = dto.Category;
+        if (dto.Value.HasValue)
+            asset.Value = dto.Value.Value;
+        if (dto.PurchaseDate.HasValue)
+            asset.PurchaseDate = dto.PurchaseDate.Value;
+        if (dto.Description != null)
+            asset.Description = dto.Description;
+
+        await _context.SaveChangesAsync();
+
+        // Asigură-te că Space este încărcat corect
+        var space = asset.Space ?? await _context.Spaces.FindAsync(asset.SpaceId);
+
+        return new AssetReadDto
+        {
+            Id = asset.Id,
+            SpaceId = asset.SpaceId,
+            SpaceName = space?.Name ?? string.Empty,
+            Name = asset.Name,
+            Category = asset.Category,
+            Value = asset.Value,
+            PurchaseDate = asset.PurchaseDate,
+            Description = asset.Description,
+            CreatedAt = asset.CreatedAt
+        };
     }
 }

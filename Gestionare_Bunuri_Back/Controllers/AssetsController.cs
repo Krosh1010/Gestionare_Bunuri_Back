@@ -20,14 +20,6 @@ namespace Gestionare_Bunuri_Back.Controllers
             var result = await _assetService.CreateAssetAsync(dto);
             return CreatedAtAction(nameof(GetAssetById), new { id = result.Id }, result);
         }
-
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<AssetReadDto>>> GetAssets()
-        {
-            var assets = await _assetService.GetAssetsAsync();
-            return Ok(assets);
-        }
-
         [HttpGet("{id}")]
         public async Task<ActionResult<AssetReadDto>> GetAssetById(int id)
         {
@@ -54,6 +46,14 @@ namespace Gestionare_Bunuri_Back.Controllers
             if (!deleted)
                 return NotFound();
             return NoContent();
+        }
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> PatchAsset(int id, [FromBody] AssetUpdateDto dto)
+        {
+            var result = await _assetService.PatchAssetAsync(id, dto);
+            if (result == null)
+                return NotFound();
+            return Ok(result);
         }
     }
 }

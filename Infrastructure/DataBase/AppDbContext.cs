@@ -23,10 +23,10 @@ namespace Infrastructure.DataBase
         {
             // Space ierarhie (self-reference)
             modelBuilder.Entity<SpaceTable>()
-                .HasOne(s => s.ParentSpace)
-                .WithMany(s => s.ChildSpaces)
-                .HasForeignKey(s => s.ParentSpaceId)
-                .OnDelete(DeleteBehavior.Restrict);
+            .HasOne(s => s.ParentSpace)
+             .WithMany(s => s.ChildSpaces)
+             .HasForeignKey(s => s.ParentSpaceId)
+             .OnDelete(DeleteBehavior.Restrict);
 
             // SpaceUser many-to-many index
             modelBuilder.Entity<SpaceUserTable>()
