@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Domain.DbTables;
 
 namespace Domain.AssetDto
 {
@@ -17,5 +18,10 @@ namespace Domain.AssetDto
         public DateTime? PurchaseDate { get; set; }
         public string? Description { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        // Adaugă aceste proprietăți:
+        public DateTime? WarrantyStartDate { get; set; }
+        public DateTime? WarrantyEndDate { get; set; }
+        public WarrantyStatus? WarrantyStatus { get; set; }
     }
 }

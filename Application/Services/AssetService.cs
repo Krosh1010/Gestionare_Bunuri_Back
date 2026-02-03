@@ -50,19 +50,23 @@ public class AssetService : IAssetService
     public async Task<IEnumerable<AssetReadDto>> GetAssetsByUserIdAsync(int userId)
     {
         return await _context.Assets
-            .Include(asset => asset.Space) // <-- Adaugă Include
+            .Include(asset => asset.Space)
+            .Include(asset => asset.Warranty) // Include Warranty
             .Where(asset => asset.Space.OwnerId == userId)
             .Select(asset => new AssetReadDto
             {
                 Id = asset.Id,
                 SpaceId = asset.SpaceId,
-                SpaceName = asset.Space.Name, // <-- Adaugă această linie
+                SpaceName = asset.Space.Name,
                 Name = asset.Name,
                 Category = asset.Category,
                 Value = asset.Value,
                 PurchaseDate = asset.PurchaseDate,
                 Description = asset.Description,
-                CreatedAt = asset.CreatedAt
+                CreatedAt = asset.CreatedAt,
+                WarrantyStartDate = asset.Warranty != null ? asset.Warranty.StartDate : null,
+                WarrantyEndDate = asset.Warranty != null ? asset.Warranty.EndDate : null,
+                WarrantyStatus = asset.Warranty != null ? asset.Warranty.Status : null
             })
             .ToListAsync();
     }

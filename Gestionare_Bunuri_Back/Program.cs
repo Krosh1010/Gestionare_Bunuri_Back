@@ -21,6 +21,7 @@ builder.Services.AddScoped<Hash>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ISpaceService, SpaceService>();
 builder.Services.AddScoped<IAssetService, AssetService>();
+builder.Services.AddScoped<IWarrantyService, WarrantyService>();
 
 builder.Services.AddCors(option =>
 {

@@ -25,7 +25,16 @@ namespace Domain.DbTables
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
 
-        [Required]
-        public WarrantyStatus Status { get; set; }
+        [NotMapped]
+        public WarrantyStatus Status
+        {
+            get
+            {
+                var now = DateTime.UtcNow;
+                return now >= StartDate && now <= EndDate
+                    ? WarrantyStatus.ACTIVE
+                    : WarrantyStatus.EXPIRED;
+            }
+        }
     }
 }

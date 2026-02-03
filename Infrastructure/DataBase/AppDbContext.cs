@@ -144,10 +144,6 @@ namespace Infrastructure.DataBase
                 .Property(e => e.Role)
                 .HasConversion<string>();
 
-            modelBuilder.Entity<WarrantyTable>()
-                .Property(e => e.Status)
-                .HasConversion<string>();
-
             modelBuilder.Entity<DocumentTable>()
                 .Property(e => e.Type)
                 .HasConversion<string>();
