@@ -6,6 +6,7 @@ namespace Domain.DbTables
     public enum WarrantyStatus
     {
         ACTIVE,
+        ExpiringSoon,
         EXPIRED
     }
 
@@ -31,10 +32,13 @@ namespace Domain.DbTables
             get
             {
                 var now = DateTime.UtcNow;
-                return now >= StartDate && now <= EndDate
-                    ? WarrantyStatus.ACTIVE
-                    : WarrantyStatus.EXPIRED;
+                if (now > EndDate)
+                    return WarrantyStatus.EXPIRED;
+                if ((EndDate - now).TotalDays <= 30)
+                    return WarrantyStatus.ExpiringSoon;
+                return WarrantyStatus.ACTIVE;
             }
+
         }
     }
 }

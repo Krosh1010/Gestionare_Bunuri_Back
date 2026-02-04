@@ -10,5 +10,6 @@ namespace Application.Abstraction
         Task<WarrantyReadDto?> GetWarrantyByAssetIdAsync(int assetId);
         Task<bool> DeleteWarrantyByAssetIdAsync(int assetId);
         Task<WarrantyReadDto?> PatchWarrantyByAssetIdAsync(int assetId, WarrantyUpdateDto dto);
+        Task<WarrantySummaryDto> GetWarrantySummaryAsync(int userId);
     }
 }

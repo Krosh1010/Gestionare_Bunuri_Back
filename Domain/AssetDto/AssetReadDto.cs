@@ -20,8 +20,10 @@ namespace Domain.AssetDto
         public DateTime CreatedAt { get; set; }
 
         // Adaugă aceste proprietăți:
-        public DateTime? WarrantyStartDate { get; set; }
         public DateTime? WarrantyEndDate { get; set; }
         public WarrantyStatus? WarrantyStatus { get; set; }
+
+        public DateTime? InsuranceEndDate { get; set; }
+        public InsuranceStatus? InsuranceStatus { get; set; }
     }
 }
