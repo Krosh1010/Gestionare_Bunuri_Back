@@ -18,6 +18,8 @@ namespace Infrastructure.DataBase
         public DbSet<DocumentTable> Documents => Set<DocumentTable>();
         public DbSet<NotificationTable> Notifications => Set<NotificationTable>();
         public DbSet<InsuranceSuggestionTable> InsuranceSuggestions => Set<InsuranceSuggestionTable>();
+        public DbSet<IgnoredNotificationTable> IgnoredNotifications => Set<IgnoredNotificationTable>();
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

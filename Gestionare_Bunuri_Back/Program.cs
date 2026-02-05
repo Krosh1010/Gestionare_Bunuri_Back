@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Application.Abstraction;
 using Application.User;
 using Application.Services;
+using Infrastructure.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,9 @@ builder.Services.AddScoped<ISpaceService, SpaceService>();
 builder.Services.AddScoped<IAssetService, AssetService>();
 builder.Services.AddScoped<IWarrantyService, WarrantyService>();
 builder.Services.AddScoped<IInsuranceService, InsuranceService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+
 
 builder.Services.AddCors(option =>
 {
