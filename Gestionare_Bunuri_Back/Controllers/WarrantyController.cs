@@ -55,17 +55,6 @@ namespace Gestionare_Bunuri_Back.Controllers
                 return NotFound();
             return Ok(result);
         }
-        [HttpGet("warranty-summary")]
-        public async Task<IActionResult> GetWarrantySummary()
-        {
-            var userIdString = HttpContext.Items["UserId"] as string;
-            if (string.IsNullOrEmpty(userIdString))
-                return Unauthorized();
-
-            int userId = int.Parse(userIdString);
-            var summary = await _warrantyService.GetWarrantySummaryAsync(userId);
-            return Ok(summary);
-        }
 
     }
 }

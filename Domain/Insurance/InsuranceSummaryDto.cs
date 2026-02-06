@@ -15,6 +15,7 @@ namespace Domain.Insurance
             public int ExpiringSoonCount { get; set; } // mai puțin de o lună
             public int ValidMoreThanMonthCount { get; set; } // mai mult de o lună
             public int AssetsWithoutInsuranceCount { get; set; } // bunuri fără asigurare
+            public decimal TotalInsuredValue { get; set; } // suma totală asigurată
         }
     }
 

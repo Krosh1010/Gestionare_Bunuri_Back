@@ -106,39 +106,6 @@ public class WarrantyService : IWarrantyService
             Status = warranty.Status
         };
     }
-    public async Task<WarrantySummaryDto> GetWarrantySummaryAsync(int userId)
-    {
-        var now = DateTime.UtcNow;
-        var oneMonthLater = now.AddMonths(1);
-
-        // Ia toate asset-urile userului
-        var assets = await _context.Assets
-            .Include(a => a.Warranty)
-            .Include(a => a.Space)
-            .Where(a => a.Space.OwnerId == userId)
-            .ToListAsync();
-
-        // Ia doar garanțiile existente
-        var warranties = assets
-            .Where(a => a.Warranty != null)
-            .Select(a => a.Warranty!)
-            .ToList();
-
-        int total = warranties.Count;
-        int expired = warranties.Count(w => w.EndDate < now);
-        int expiringSoon = warranties.Count(w => w.EndDate >= now && w.EndDate <= oneMonthLater);
-        int validMoreThanMonth = warranties.Count(w => w.EndDate > oneMonthLater);
-        int assetsWithoutWarranty = assets.Count(a => a.Warranty == null);
-
-        return new WarrantySummaryDto
-        {
-            TotalCount = total,
-            ExpiredCount = expired,
-            ExpiringSoonCount = expiringSoon,
-            ValidMoreThanMonthCount = validMoreThanMonth,
-            AssetsWithoutWarrantyCount = assetsWithoutWarranty
-        };
-    }
 
 
 }

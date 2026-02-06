@@ -5,6 +5,7 @@ using Application.Abstraction;
 using Application.User;
 using Application.Services;
 using Infrastructure.Services;
+using Application.Abstraction.CoverageStatus;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,8 @@ builder.Services.AddScoped<IWarrantyService, WarrantyService>();
 builder.Services.AddScoped<IInsuranceService, InsuranceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IWarrantyStatusService, WarrantyStatusService>();
+builder.Services.AddScoped<IInsuranceStatusService, InsuranceStatusService>();
 
 
 builder.Services.AddCors(option =>

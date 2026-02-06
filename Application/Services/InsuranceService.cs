@@ -95,40 +95,5 @@ namespace Application.Services
             };
         }
 
-        public async Task<InsuranceSummaryDto> GetInsuranceSummaryAsync(int userId)
-        {
-            var now = DateTime.UtcNow;
-            var oneMonthLater = now.AddMonths(1);
-
-            // Ia toate asset-urile userului
-            var assets = await _context.Assets
-                .Include(a => a.Insurance)
-                .Include(a => a.Space)
-                .Where(a => a.Space.OwnerId == userId)
-                .ToListAsync();
-
-            // Ia doar asigurările existente
-            var insurances = assets
-                .Where(a => a.Insurance != null)
-                .Select(a => a.Insurance!)
-                .ToList();
-
-            int total = insurances.Count;
-            int expired = insurances.Count(i => i.EndDate < now);
-            int expiringSoon = insurances.Count(i => i.EndDate >= now && i.EndDate <= oneMonthLater);
-            int validMoreThanMonth = insurances.Count(i => i.EndDate > oneMonthLater);
-            int assetsWithoutInsurance = assets.Count(a => a.Insurance == null);
-
-            return new InsuranceSummaryDto
-            {
-                TotalCount = total,
-                ExpiredCount = expired,
-                ExpiringSoonCount = expiringSoon,
-                ValidMoreThanMonthCount = validMoreThanMonth,
-                AssetsWithoutInsuranceCount = assetsWithoutInsurance
-            };
-        }
-
-
     }
 }

@@ -10,7 +10,6 @@ namespace Application.Abstraction
         Task<InsuranceReadDto?> GetInsuranceByAssetIdAsync(int assetId);
         Task<bool> DeleteInsuranceByAssetIdAsync(int assetId);
         Task<InsuranceReadDto?> PatchInsuranceByAssetIdAsync(int assetId, InsuranceUpdateDto dto);
-        Task<InsuranceSummaryDto> GetInsuranceSummaryAsync(int userId);
     }
 
 }

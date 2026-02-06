@@ -47,17 +47,5 @@ namespace Gestionare_Bunuri_Back.Controllers
             return Ok(result);
         }
 
-        [HttpGet("insurance-summary")]
-        public async Task<IActionResult> GetInsuranceSummary()
-        {
-            var userIdString = HttpContext.Items["UserId"] as string;
-            if (string.IsNullOrEmpty(userIdString))
-                return Unauthorized();
-
-            int userId = int.Parse(userIdString);
-            var summary = await _insuranceService.GetInsuranceSummaryAsync(userId);
-            return Ok(summary);
-        }
-
     }
 }
