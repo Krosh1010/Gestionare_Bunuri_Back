@@ -6,10 +6,12 @@ using Application.User;
 using Application.Services;
 using Infrastructure.Services;
 using Application.Abstraction.CoverageStatus;
-
+using Infrastructure.Abstraction;
+using Infrastructure.Export;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
-
+QuestPDF.Settings.License = LicenseType.Community;
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -30,6 +32,9 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IWarrantyStatusService, WarrantyStatusService>();
 builder.Services.AddScoped<IInsuranceStatusService, InsuranceStatusService>();
+builder.Services.AddScoped<IExportRepository, ExportRepository>();
+builder.Services.AddScoped<IExportService, ExportService>();
+
 
 
 builder.Services.AddCors(option =>

@@ -25,5 +25,10 @@ namespace Domain.AssetDto
 
         public DateTime? InsuranceEndDate { get; set; }
         public InsuranceStatus? InsuranceStatus { get; set; }
+        public decimal? InsuranceValue { get; set; }
+        public string? InsuranceCompany { get; set; }
+        public DateTime? InsuranceStartDate { get; set; }
+        public string? WarrantyProvider { get; set; }
+        public DateTime? WarrantyStartDate { get; set; }
     }
 }

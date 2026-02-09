@@ -66,8 +66,13 @@ public class AssetService : IAssetService
                 CreatedAt = asset.CreatedAt,
                 WarrantyEndDate = asset.Warranty != null ? asset.Warranty.EndDate : null,
                 WarrantyStatus = asset.Warranty != null ? asset.Warranty.Status : null,
+                WarrantyProvider = asset.Warranty != null ? asset.Warranty.Provider : null,
+                WarrantyStartDate = asset.Warranty != null ? asset.Warranty.StartDate : null,
                 InsuranceEndDate = asset.Insurance != null ? asset.Insurance.EndDate : null,
-                InsuranceStatus = asset.Insurance != null ? asset.Insurance.Status : null
+                InsuranceStatus = asset.Insurance != null ? asset.Insurance.Status : null,
+                InsuranceValue = asset.Insurance != null ? asset.Insurance.InsuredValue : null,
+                InsuranceCompany = asset.Insurance != null ? asset.Insurance.Company : null,
+                InsuranceStartDate = asset.Insurance != null ? asset.Insurance.StartDate : null
             })
             .ToListAsync();
     }
