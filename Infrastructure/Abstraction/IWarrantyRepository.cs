@@ -1,0 +1,14 @@
+using Domain.Warranty;
+using System.Threading.Tasks;
+
+namespace Infrastructure.Abstraction
+{
+    public interface IWarrantyRepository
+    {
+        Task<WarrantyReadDto> CreateWarrantyAsync(WarrantyCreateDto dto);
+        Task<WarrantyReadDto?> GetWarrantyByIdAsync(int id);
+        Task<WarrantyReadDto?> GetWarrantyByAssetIdAsync(int assetId);
+        Task<bool> DeleteWarrantyByAssetIdAsync(int assetId);
+        Task<WarrantyReadDto?> PatchWarrantyByAssetIdAsync(int assetId, WarrantyUpdateDto dto);
+    }
+}

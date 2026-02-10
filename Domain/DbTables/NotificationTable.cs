@@ -32,5 +32,8 @@ namespace Domain.DbTables
         public bool IsRead { get; set; } = false;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Adaugă acest câmp nou:
+        public DateTime? ExpiryDate { get; set; }
     }
 }

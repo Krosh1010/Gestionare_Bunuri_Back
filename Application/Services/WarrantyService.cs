@@ -1,111 +1,39 @@
-﻿using Application.Abstraction;
-using Domain.DbTables;
-using Domain.Warranty;
-using Infrastructure.DataBase;
-using Microsoft.EntityFrameworkCore;
+﻿using Domain.Warranty;
+using Application.Abstraction;
+using Infrastructure.Abstraction;
+using System.Threading.Tasks;
 
 public class WarrantyService : IWarrantyService
 {
-    private readonly AppDbContext _context;
+    private readonly IWarrantyRepository _warrantyRepository;
 
-    public WarrantyService(AppDbContext context)
+    public WarrantyService(IWarrantyRepository warrantyRepository)
     {
-        _context = context;
+        _warrantyRepository = warrantyRepository;
     }
 
     public async Task<WarrantyReadDto> CreateWarrantyAsync(WarrantyCreateDto dto)
     {
-        var warranty = new WarrantyTable
-        {
-            AssetId = dto.AssetId,
-            Provider = dto.Provider,
-            StartDate = dto.StartDate,
-            EndDate = dto.EndDate
-        };
-
-        _context.Warranties.Add(warranty);
-        await _context.SaveChangesAsync();
-
-        return new WarrantyReadDto
-        {
-            Id = warranty.Id,
-            AssetId = warranty.AssetId,
-            Provider = warranty.Provider,
-            StartDate = warranty.StartDate,
-            EndDate = warranty.EndDate,
-            Status = warranty.Status // calculat automat
-        };
+        return await _warrantyRepository.CreateWarrantyAsync(dto);
     }
 
     public async Task<WarrantyReadDto?> GetWarrantyByIdAsync(int id)
     {
-        var warranty = await _context.Warranties.FindAsync(id);
-        if (warranty == null)
-            return null;
-
-        return new WarrantyReadDto
-        {
-            Id = warranty.Id,
-            AssetId = warranty.AssetId,
-            Provider = warranty.Provider,
-            StartDate = warranty.StartDate,
-            EndDate = warranty.EndDate,
-            Status = warranty.Status
-        };
+        return await _warrantyRepository.GetWarrantyByIdAsync(id);
     }
+
     public async Task<WarrantyReadDto?> GetWarrantyByAssetIdAsync(int assetId)
     {
-        var warranty = await _context.Warranties
-            .FirstOrDefaultAsync(w => w.AssetId == assetId);
-
-        if (warranty == null)
-            return null;
-
-        return new WarrantyReadDto
-        {
-            Id = warranty.Id,
-            AssetId = warranty.AssetId,
-            Provider = warranty.Provider,
-            StartDate = warranty.StartDate,
-            EndDate = warranty.EndDate,
-            Status = warranty.Status
-        };
+        return await _warrantyRepository.GetWarrantyByAssetIdAsync(assetId);
     }
+
     public async Task<bool> DeleteWarrantyByAssetIdAsync(int assetId)
     {
-        var warranty = await _context.Warranties.FirstOrDefaultAsync(w => w.AssetId == assetId);
-        if (warranty == null)
-            return false;
-
-        _context.Warranties.Remove(warranty);
-        await _context.SaveChangesAsync();
-        return true;
+        return await _warrantyRepository.DeleteWarrantyByAssetIdAsync(assetId);
     }
+
     public async Task<WarrantyReadDto?> PatchWarrantyByAssetIdAsync(int assetId, WarrantyUpdateDto dto)
     {
-        var warranty = await _context.Warranties.FirstOrDefaultAsync(w => w.AssetId == assetId);
-        if (warranty == null)
-            return null;
-
-        if (dto.Provider != null)
-            warranty.Provider = dto.Provider;
-        if (dto.StartDate.HasValue)
-            warranty.StartDate = dto.StartDate.Value;
-        if (dto.EndDate.HasValue)
-            warranty.EndDate = dto.EndDate.Value;
-
-        await _context.SaveChangesAsync();
-
-        return new WarrantyReadDto
-        {
-            Id = warranty.Id,
-            AssetId = warranty.AssetId,
-            Provider = warranty.Provider,
-            StartDate = warranty.StartDate,
-            EndDate = warranty.EndDate,
-            Status = warranty.Status
-        };
+        return await _warrantyRepository.PatchWarrantyByAssetIdAsync(assetId, dto);
     }
-
-
 }
