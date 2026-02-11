@@ -24,6 +24,21 @@ namespace Infrastructure.Asset
             var now = DateTime.UtcNow;
             var threshold = now.AddDays(30);
 
+            // Curățăm notificările citite vechi (expirate de mai mult de 90 zile)
+            // Acestea nu mai sunt relevante și ocupă spațiu inutil
+            var cleanupThreshold = now.AddDays(-90);
+            var oldReadNotifications = await _context.Notifications
+                .Where(n => n.UserId == userId &&
+                            n.IsRead &&
+                            n.ExpiryDate.HasValue &&
+                            n.ExpiryDate.Value < cleanupThreshold)
+                .ToListAsync();
+
+            if (oldReadNotifications.Any())
+            {
+                _context.Notifications.RemoveRange(oldReadNotifications);
+            }
+
             var assets = await _context.Assets
                 .Include(a => a.Warranty)
                 .Include(a => a.Insurance)
@@ -38,34 +53,36 @@ namespace Infrastructure.Asset
                 {
                     if (asset.Warranty.EndDate < now)
                     {
-                        bool ignored = await _context.IgnoredNotifications.AnyAsync(i =>
-                            i.UserId == userId &&
-                            i.AssetId == asset.Id &&
-                            i.Type == NotificationType.WARRANTY_EXP &&
-                            i.MessageType == "expired");
-
-                        bool exists = await _context.Notifications.AnyAsync(n =>
+                        // Verificăm dacă există o notificare citită (ignorată) pentru această dată de expirare
+                        bool dismissed = await _context.Notifications.AnyAsync(n =>
                             n.AssetId == asset.Id &&
                             n.UserId == userId &&
                             n.Type == NotificationType.WARRANTY_EXP &&
-                            n.Message.Contains("a expirat") &&
+                            n.ExpiryDate == asset.Warranty.EndDate &&
+                            n.IsRead);
+
+                        bool existsUnread = await _context.Notifications.AnyAsync(n =>
+                            n.AssetId == asset.Id &&
+                            n.UserId == userId &&
+                            n.Type == NotificationType.WARRANTY_EXP &&
+                            n.ExpiryDate == asset.Warranty.EndDate &&
                             !n.IsRead);
 
-                        // Șterge notificările "expiră curând" necitite pentru acest asset și user
-                        var oldExpiringNotifications = await _context.Notifications
+                        // Șterge notificările necitite cu altă dată de expirare (data s-a schimbat)
+                        var oldNotifications = await _context.Notifications
                             .Where(n => n.AssetId == asset.Id &&
                                         n.UserId == userId &&
                                         n.Type == NotificationType.WARRANTY_EXP &&
-                                        n.ExpiryDate != null && // doar cele cu ExpiryDate (adică "expiră curând")
+                                        n.ExpiryDate != asset.Warranty.EndDate &&
                                         !n.IsRead)
                             .ToListAsync();
 
-                        if (oldExpiringNotifications.Any())
+                        if (oldNotifications.Any())
                         {
-                            _context.Notifications.RemoveRange(oldExpiringNotifications);
+                            _context.Notifications.RemoveRange(oldNotifications);
                         }
 
-                        if (!exists && !ignored)
+                        if (!existsUnread && !dismissed)
                         {
                             _context.Notifications.Add(new NotificationTable
                             {
@@ -73,47 +90,50 @@ namespace Infrastructure.Asset
                                 AssetId = asset.Id,
                                 Type = NotificationType.WARRANTY_EXP,
                                 Message = $"Garanția pentru '{asset.Name}' a expirat.",
-                                CreatedAt = now
+                                CreatedAt = now,
+                                ExpiryDate = asset.Warranty.EndDate // Setăm ExpiryDate și la expired
                             });
                         }
                     }
                     else if (asset.Warranty.EndDate <= threshold)
                     {
-                        bool ignored = await _context.IgnoredNotifications.AnyAsync(i =>
-                            i.UserId == userId &&
-                            i.AssetId == asset.Id &&
-                            i.Type == NotificationType.WARRANTY_EXP &&
-                            i.MessageType == "expiring");
+                        // Verificăm dacă există o notificare citită (ignorată) pentru această dată de expirare
+                        bool dismissed = await _context.Notifications.AnyAsync(n =>
+                            n.AssetId == asset.Id &&
+                            n.UserId == userId &&
+                            n.Type == NotificationType.WARRANTY_EXP &&
+                            n.ExpiryDate == asset.Warranty.EndDate &&
+                            n.IsRead);
 
-                        // Șterge notificările "a expirat" necitite pentru acest asset și user
-                        var oldExpiredNotifications = await _context.Notifications
+                        // Șterge notificările necitite cu altă dată de expirare (data s-a schimbat)
+                        var oldNotifications = await _context.Notifications
                             .Where(n => n.AssetId == asset.Id &&
                                         n.UserId == userId &&
                                         n.Type == NotificationType.WARRANTY_EXP &&
-                                        n.ExpiryDate == null && // doar cele "a expirat"
+                                        n.ExpiryDate != asset.Warranty.EndDate &&
                                         !n.IsRead)
                             .ToListAsync();
 
-                        if (oldExpiredNotifications.Any())
+                        if (oldNotifications.Any())
                         {
-                            _context.Notifications.RemoveRange(oldExpiredNotifications);
+                            _context.Notifications.RemoveRange(oldNotifications);
                         }
 
-                        // Șterge notificările "expiră curând" duplicate necitite pentru acest asset și user
-                        var oldExpiringNotifications = await _context.Notifications
+                        // Șterge notificările necitite duplicate pentru aceeași dată
+                        var duplicateNotifications = await _context.Notifications
                             .Where(n => n.AssetId == asset.Id &&
                                         n.UserId == userId &&
                                         n.Type == NotificationType.WARRANTY_EXP &&
-                                        n.ExpiryDate != null &&
+                                        n.ExpiryDate == asset.Warranty.EndDate &&
                                         !n.IsRead)
                             .ToListAsync();
 
-                        if (oldExpiringNotifications.Any())
+                        if (duplicateNotifications.Any())
                         {
-                            _context.Notifications.RemoveRange(oldExpiringNotifications);
+                            _context.Notifications.RemoveRange(duplicateNotifications);
                         }
 
-                        if (!ignored)
+                        if (!dismissed)
                         {
                             _context.Notifications.Add(new NotificationTable
                             {
@@ -148,33 +168,36 @@ namespace Infrastructure.Asset
                 {
                     if (asset.Insurance.EndDate < now)
                     {
-                        bool ignored = await _context.IgnoredNotifications.AnyAsync(i =>
-                            i.UserId == userId &&
-                            i.AssetId == asset.Id &&
-                            i.Type == NotificationType.INSURANCE_EXP &&
-                            i.MessageType == "expired");
-
-                        bool exists = await _context.Notifications.AnyAsync(n =>
+                        // Verificăm dacă există o notificare citită (ignorată) pentru această dată de expirare
+                        bool dismissed = await _context.Notifications.AnyAsync(n =>
                             n.AssetId == asset.Id &&
                             n.UserId == userId &&
                             n.Type == NotificationType.INSURANCE_EXP &&
-                            n.Message.Contains("a expirat") &&
+                            n.ExpiryDate == asset.Insurance.EndDate &&
+                            n.IsRead);
+
+                        bool existsUnread = await _context.Notifications.AnyAsync(n =>
+                            n.AssetId == asset.Id &&
+                            n.UserId == userId &&
+                            n.Type == NotificationType.INSURANCE_EXP &&
+                            n.ExpiryDate == asset.Insurance.EndDate &&
                             !n.IsRead);
-                        // Șterge notificările "expiră curând" necitite pentru acest asset și user
-                        var oldExpiringNotifications = await _context.Notifications
+
+                        // Șterge notificările necitite cu altă dată de expirare (data s-a schimbat)
+                        var oldNotifications = await _context.Notifications
                             .Where(n => n.AssetId == asset.Id &&
                                         n.UserId == userId &&
                                         n.Type == NotificationType.INSURANCE_EXP &&
-                                        n.ExpiryDate != null && // doar cele cu ExpiryDate (adică "expiră curând")
+                                        n.ExpiryDate != asset.Insurance.EndDate &&
                                         !n.IsRead)
                             .ToListAsync();
 
-                        if (oldExpiringNotifications.Any())
+                        if (oldNotifications.Any())
                         {
-                            _context.Notifications.RemoveRange(oldExpiringNotifications);
+                            _context.Notifications.RemoveRange(oldNotifications);
                         }
 
-                        if (!exists && !ignored)
+                        if (!existsUnread && !dismissed)
                         {
                             _context.Notifications.Add(new NotificationTable
                             {
@@ -182,31 +205,50 @@ namespace Infrastructure.Asset
                                 AssetId = asset.Id,
                                 Type = NotificationType.INSURANCE_EXP,
                                 Message = $"Asigurarea pentru '{asset.Name}' a expirat.",
-                                CreatedAt = now
+                                CreatedAt = now,
+                                ExpiryDate = asset.Insurance.EndDate // Setăm ExpiryDate și la expired
                             });
                         }
                     }
                     else if (asset.Insurance.EndDate <= threshold)
                     {
-                        bool ignored = await _context.IgnoredNotifications.AnyAsync(i =>
-                            i.UserId == userId &&
-                            i.AssetId == asset.Id &&
-                            i.Type == NotificationType.INSURANCE_EXP &&
-                            i.MessageType == "expiring");
+                        // Verificăm dacă există o notificare citită (ignorată) pentru această dată de expirare
+                        bool dismissed = await _context.Notifications.AnyAsync(n =>
+                            n.AssetId == asset.Id &&
+                            n.UserId == userId &&
+                            n.Type == NotificationType.INSURANCE_EXP &&
+                            n.ExpiryDate == asset.Insurance.EndDate &&
+                            n.IsRead);
 
-                        var oldInsuranceNotifications = await _context.Notifications
+                        // Șterge notificările necitite cu altă dată de expirare (data s-a schimbat)
+                        var oldNotifications = await _context.Notifications
                             .Where(n => n.AssetId == asset.Id &&
                                         n.UserId == userId &&
                                         n.Type == NotificationType.INSURANCE_EXP &&
+                                        n.ExpiryDate != asset.Insurance.EndDate &&
                                         !n.IsRead)
                             .ToListAsync();
 
-                        if (oldInsuranceNotifications.Any())
+                        if (oldNotifications.Any())
                         {
-                            _context.Notifications.RemoveRange(oldInsuranceNotifications);
+                            _context.Notifications.RemoveRange(oldNotifications);
                         }
 
-                        if (!ignored)
+                        // Șterge notificările necitite duplicate pentru aceeași dată
+                        var duplicateNotifications = await _context.Notifications
+                            .Where(n => n.AssetId == asset.Id &&
+                                        n.UserId == userId &&
+                                        n.Type == NotificationType.INSURANCE_EXP &&
+                                        n.ExpiryDate == asset.Insurance.EndDate &&
+                                        !n.IsRead)
+                            .ToListAsync();
+
+                        if (duplicateNotifications.Any())
+                        {
+                            _context.Notifications.RemoveRange(duplicateNotifications);
+                        }
+
+                        if (!dismissed)
                         {
                             _context.Notifications.Add(new NotificationTable
                             {
@@ -244,25 +286,29 @@ namespace Infrastructure.Asset
         {
             var notifications = await _context.Notifications
                 .Include(n => n.Asset)
-                .Where(n => n.UserId == userId)
+                .Where(n => n.UserId == userId && !n.IsRead) // Doar notificările necitite
                 .ToListAsync();
 
+            var now = DateTime.UtcNow;
             var result = notifications
                 .Select(n => new
                 {
                     Notification = n,
                     DaysLeft = n.ExpiryDate.HasValue
-                        ? (n.ExpiryDate.Value.Date - DateTime.UtcNow.Date).Days
-                        : int.MaxValue // pentru cele fără ExpiryDate (ex: "a expirat"), le punem la final
+                        ? (n.ExpiryDate.Value.Date - now.Date).Days
+                        : int.MinValue // pentru cele expirate (DaysLeft negativ sau zero), le punem la sfârșit
                 })
-                .OrderBy(x => x.DaysLeft)
+                .OrderByDescending(x => x.DaysLeft > 0) // Mai întâi cele care expiră curând
+                .ThenBy(x => x.DaysLeft > 0 ? x.DaysLeft : int.MaxValue) // Sortăm cele "expiring" după zile rămase
                 .ThenByDescending(x => x.Notification.CreatedAt)
                 .Select(x => new NotificationDto
                 {
                     Id = x.Notification.Id,
                     Type = x.Notification.Type,
                     Message = (x.Notification.Type == NotificationType.WARRANTY_EXP || x.Notification.Type == NotificationType.INSURANCE_EXP) && x.Notification.ExpiryDate.HasValue
-                        ? $"{(x.Notification.Type == NotificationType.WARRANTY_EXP ? "Garanția" : "Asigurarea")} pentru '{x.Notification.Asset.Name}' expiră în {x.DaysLeft} zile."
+                        ? (x.DaysLeft > 0 
+                            ? $"{(x.Notification.Type == NotificationType.WARRANTY_EXP ? "Garanția" : "Asigurarea")} pentru '{x.Notification.Asset.Name}' expiră în {x.DaysLeft} zile."
+                            : $"{(x.Notification.Type == NotificationType.WARRANTY_EXP ? "Garanția" : "Asigurarea")} pentru '{x.Notification.Asset.Name}' a expirat.")
                         : x.Notification.Message,
                     IsRead = x.Notification.IsRead,
                     CreatedAt = x.Notification.CreatedAt
@@ -283,17 +329,10 @@ namespace Infrastructure.Asset
             if (notification == null)
                 return false;
 
-            string messageType = notification.ExpiryDate.HasValue ? "expiring" : "expired";
-
-            _context.IgnoredNotifications.Add(new IgnoredNotificationTable
-            {
-                UserId = notification.UserId,
-                AssetId = notification.AssetId,
-                Type = notification.Type,
-                MessageType = messageType
-            });
-
-            _context.Notifications.Remove(notification);
+            // În loc să ștergem, marcăm ca citită (ignorată)
+            // Astfel, la regenerare nu se va crea din nou pentru aceeași dată de expirare
+            notification.IsRead = true;
+            
             await _context.SaveChangesAsync();
             return true;
         }
