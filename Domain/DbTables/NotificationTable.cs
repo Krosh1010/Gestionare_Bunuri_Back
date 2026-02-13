@@ -33,7 +33,10 @@ namespace Domain.DbTables
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Adaugă acest câmp nou:
+        // Data de expirare a garanției/asigurării
         public DateTime? ExpiryDate { get; set; }
+
+        // true = notificare "a expirat", false = notificare "expiră curând"
+        public bool IsExpired { get; set; } = false;
     }
 }

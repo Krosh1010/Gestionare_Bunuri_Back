@@ -11,7 +11,8 @@ namespace Domain.CoverageStatus
         {
             public string AssetName { get; set; } = null!;
             public string? Category { get; set; }
-            public DateTime StartDate { get; set; }
+        public string Provider { get; set; } = null!;
+        public DateTime StartDate { get; set; }
             public DateTime EndDate { get; set; }
         }
 

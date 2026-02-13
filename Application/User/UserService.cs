@@ -1,8 +1,7 @@
 ﻿using Application.Abstraction;
 using Domain.DbTables;
 using Domain.User;
-using Infrastructure.DataBase;
-using Microsoft.EntityFrameworkCore;
+using Infrastructure.Abstraction;
 using Microsoft.Extensions.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -13,20 +12,20 @@ namespace Application.User
 {
     public class UserService : IUserService
     {
-        private readonly AppDbContext _context;
+        private readonly IUserRepository _userRepository;
         private readonly IConfiguration _config;
         private readonly Hash _hash;
 
-        public UserService(AppDbContext context, IConfiguration config, Hash hash)
+        public UserService(IUserRepository userRepository, IConfiguration config, Hash hash)
         {
-            _context = context;
+            _userRepository = userRepository;
             _config = config;
             _hash = hash;
         }
 
         public async Task<string?> LoginAsync(UserLoginDto dto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            var user = await _userRepository.GetUserByEmailAsync(dto.Email);
             if (user == null) return null;
 
             if (!_hash.Verify(dto.Password, user.PasswordHash)) return null;
@@ -36,21 +35,35 @@ namespace Application.User
 
         public async Task<string?> RegisterAsync(UserRegisterDto dto)
         {
-            var exists = await _context.Users.AnyAsync(u => u.Email == dto.Email);
+            var exists = await _userRepository.UserExistsByEmailAsync(dto.Email);
             if (exists) throw new Exception("User existent");
 
-            var user = new UserTable
-            {
-                Email = dto.Email,
-                PasswordHash = _hash.Generate(dto.Password),
-                FullName = dto.FullName,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            var hashedPassword = _hash.Generate(dto.Password);
+            var user = await _userRepository.CreateUserAsync(dto.Email, hashedPassword, dto.FullName);
 
             return GenerateJwtToken(user);
+        }
+
+        public async Task<UserReadDto?> GetUserInfoAsync(int userId)
+        {
+            return await _userRepository.GetUserByIdAsync(userId);
+        }
+        public async Task<UserReadDto?> PatchUserDataAsync(int userId, UserUpdateDataDto dto)
+        {
+            return await _userRepository.PatchUserDataAsync(userId, dto);
+        }
+
+        public async Task<bool> ChangePasswordAsync(int userId, UserChangePasswordDto dto)
+        {
+            var user = await _userRepository.GetUserEntityByIdAsync(userId);
+            if (user == null) return false;
+
+            if (!_hash.Verify(dto.CurrentPassword, user.PasswordHash))
+                return false;
+
+            var newHash = _hash.Generate(dto.NewPassword);
+            await _userRepository.UpdatePasswordAsync(user, newHash);
+            return true;
         }
 
         private string GenerateJwtToken(UserTable user)
@@ -62,7 +75,8 @@ namespace Application.User
                 new Claim("FullName", user.FullName)
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var jwtKey = _config["Jwt:Key"] ?? string.Empty;
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(

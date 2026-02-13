@@ -9,6 +9,7 @@ using Application.Abstraction.CoverageStatus;
 using Infrastructure.Abstraction;
 using Infrastructure.Export;
 using Infrastructure.Asset;
+using Infrastructure.User;
 using QuestPDF.Infrastructure;
 using Infrastructure.Abstraction.CoverageStatus;
 using Infrastructure.Asset.CoverageStatus;
@@ -26,6 +27,7 @@ builder.Services.AddDbContext<AppDbContext>(options => options
      .UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<Hash>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ISpaceRepository, SpaceRepository>();
 builder.Services.AddScoped<ISpaceService, SpaceService>();

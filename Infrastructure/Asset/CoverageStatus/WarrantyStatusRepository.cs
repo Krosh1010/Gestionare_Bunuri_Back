@@ -56,6 +56,7 @@ namespace Infrastructure.Asset.CoverageStatus
                 {
                     AssetName = w.Asset.Name,
                     Category = w.Asset.Category,
+                    Provider = w.Provider,
                     StartDate = w.StartDate,
                     EndDate = w.EndDate
                 })
@@ -74,6 +75,7 @@ namespace Infrastructure.Asset.CoverageStatus
                 {
                     AssetName = w.Asset.Name,
                     Category = w.Asset.Category,
+                    Provider = w.Provider,
                     StartDate = w.StartDate,
                     EndDate = w.EndDate,
                     DaysLeft = EF.Functions.DateDiffDay(now, w.EndDate)
@@ -93,6 +95,7 @@ namespace Infrastructure.Asset.CoverageStatus
                 {
                     AssetName = w.Asset.Name,
                     Category = w.Asset.Category,
+                    Provider = w.Provider,
                     StartDate = w.StartDate,
                     EndDate = w.EndDate,
                     DaysLeft = EF.Functions.DateDiffDay(now, w.EndDate)
