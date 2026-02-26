@@ -1,11 +1,8 @@
 ﻿
 using Application.Abstraction;
-using Domain.DbTables;
 using Domain.Insurance;
 using Infrastructure.Abstraction;
-using Domain.Insurance.Domain.Insurance;
-using Infrastructure.DataBase;
-using Microsoft.EntityFrameworkCore;
+
 
 namespace Application.Services
 {

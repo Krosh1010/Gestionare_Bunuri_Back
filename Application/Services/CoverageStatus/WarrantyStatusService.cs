@@ -1,4 +1,5 @@
 ﻿using Application.Abstraction.CoverageStatus;
+using Domain.AssetDto;
 using Domain.CoverageStatus;
 using Domain.Warranty;
 using Infrastructure.Abstraction.CoverageStatus;
@@ -19,24 +20,24 @@ public class WarrantyStatusService : IWarrantyStatusService
         return await _warrantyStatusRepository.GetWarrantySummaryAsync(userId);
     }
 
-    public async Task<IEnumerable<ExpiredWarrantyAssetDto>> GetExpiredWarrantyAssetsAsync(int userId)
+    public async Task<PagedResult<ExpiredWarrantyAssetDto>> GetExpiredWarrantyAssetsAsync(int userId, int page, int pageSize)
     {
-        return await _warrantyStatusRepository.GetExpiredWarrantyAssetsAsync(userId);
+        return await _warrantyStatusRepository.GetExpiredWarrantyAssetsAsync(userId, page, pageSize);
     }
 
-    public async Task<IEnumerable<ExpiringWarrantyAssetDto>> GetExpiringWarrantyAssetsAsync(int userId)
+    public async Task<PagedResult<ExpiringWarrantyAssetDto>> GetExpiringWarrantyAssetsAsync(int userId, int page, int pageSize)
     {
-        return await _warrantyStatusRepository.GetExpiringWarrantyAssetsAsync(userId);
+        return await _warrantyStatusRepository.GetExpiringWarrantyAssetsAsync(userId, page, pageSize);
     }
 
-    public async Task<IEnumerable<ValidWarrantyAssetDto>> GetValidWarrantyAssetsAsync(int userId)
+    public async Task<PagedResult<ValidWarrantyAssetDto>> GetValidWarrantyAssetsAsync(int userId, int page, int pageSize)
     {
-        return await _warrantyStatusRepository.GetValidWarrantyAssetsAsync(userId);
+        return await _warrantyStatusRepository.GetValidWarrantyAssetsAsync(userId, page, pageSize);
     }
 
-    public async Task<IEnumerable<AssetWithoutWarrantyDto>> GetAssetsWithoutWarrantyAsync(int userId)
+    public async Task<PagedResult<AssetWithoutWarrantyDto>> GetAssetsWithoutWarrantyAsync(int userId, int page, int pageSize)
     {
-        return await _warrantyStatusRepository.GetAssetsWithoutWarrantyAsync(userId);
+        return await _warrantyStatusRepository.GetAssetsWithoutWarrantyAsync(userId, page, pageSize);
     }
 }
 

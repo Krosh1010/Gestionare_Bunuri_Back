@@ -18,6 +18,7 @@ namespace Infrastructure.DataBase
         public DbSet<DocumentTable> Documents => Set<DocumentTable>();
         public DbSet<NotificationTable> Notifications => Set<NotificationTable>();
         public DbSet<InsuranceSuggestionTable> InsuranceSuggestions => Set<InsuranceSuggestionTable>();
+        public DbSet<CustomTrackerTable> CustomTrackers => Set<CustomTrackerTable>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -152,6 +153,13 @@ namespace Infrastructure.DataBase
             modelBuilder.Entity<NotificationTable>()
                 .Property(e => e.Type)
                 .HasConversion<string>();
+
+            // CustomTracker -> Asset (Cascade, 1:many)
+            modelBuilder.Entity<CustomTrackerTable>()
+                .HasOne(ct => ct.Asset)
+                .WithMany(a => a.CustomTrackers)
+                .HasForeignKey(ct => ct.AssetId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

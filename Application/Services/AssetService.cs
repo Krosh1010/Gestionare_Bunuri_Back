@@ -1,4 +1,5 @@
-﻿using Domain.AssetDto;
+﻿
+using Domain.AssetDto;
 using Application.Abstraction;
 using Infrastructure.Abstraction;
 using System.Collections.Generic;
@@ -23,9 +24,10 @@ public class AssetService : IAssetService
         return await _assetRepository.GetAssetByIdAsync(id);
     }
 
-    public async Task<IEnumerable<AssetReadDto>> GetAssetsByUserIdAsync(int userId)
+
+    public async Task<PagedResult<AssetReadDto>> GetAssetsByUserIdPagedAsync(int userId, AssetPagedRequest request)
     {
-        return await _assetRepository.GetAssetsByUserIdAsync(userId);
+        return await _assetRepository.GetAssetsByUserIdPagedAsync(userId, request);
     }
 
     public async Task<bool> DeleteAssetAsync(int id)
@@ -36,5 +38,9 @@ public class AssetService : IAssetService
     public async Task<AssetReadDto?> PatchAssetAsync(int assetId, AssetUpdateDto dto)
     {
         return await _assetRepository.PatchAssetAsync(assetId, dto);
+    }
+    public async Task<IEnumerable<AssetReadDto>> GetAssetsByUserIdAsync(int userId)
+    {
+        return await _assetRepository.GetAssetsByUserIdAsync(userId);
     }
 }

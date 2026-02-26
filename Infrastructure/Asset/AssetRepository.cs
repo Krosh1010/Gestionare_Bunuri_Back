@@ -1,3 +1,4 @@
+
 using Domain.AssetDto;
 using Infrastructure.Abstraction;
 using Infrastructure.DataBase;
@@ -49,12 +50,22 @@ namespace Infrastructure.Asset
             };
         }
 
-        public async Task<IEnumerable<AssetReadDto>> GetAssetsByUserIdAsync(int userId)
+        public async Task<PagedResult<AssetReadDto>> GetAssetsByUserIdPagedAsync(int userId, AssetPagedRequest request)
         {
-            return await _context.Assets
+            var query = _context.Assets
                 .Include(asset => asset.Space)
                 .Include(asset => asset.Warranty)
-                .Where(asset => asset.Space.OwnerId == userId)
+                .Include(asset => asset.Insurance)
+                .Where(asset => asset.Space.OwnerId == userId);
+
+            var totalCount = await query.CountAsync();
+            var totalValue = await query.SumAsync(asset => asset.Value);
+
+            var items = await query
+                .Include(asset => asset.CustomTrackers)
+                .OrderByDescending(asset => asset.CreatedAt)
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
                 .Select(asset => new AssetReadDto
                 {
                     Id = asset.Id,
@@ -65,18 +76,23 @@ namespace Infrastructure.Asset
                     Value = asset.Value,
                     PurchaseDate = asset.PurchaseDate,
                     Description = asset.Description,
-                    CreatedAt = asset.CreatedAt,
                     WarrantyEndDate = asset.Warranty != null ? asset.Warranty.EndDate : null,
                     WarrantyStatus = asset.Warranty != null ? asset.Warranty.Status : null,
-                    WarrantyProvider = asset.Warranty != null ? asset.Warranty.Provider : null,
-                    WarrantyStartDate = asset.Warranty != null ? asset.Warranty.StartDate : null,
                     InsuranceEndDate = asset.Insurance != null ? asset.Insurance.EndDate : null,
                     InsuranceStatus = asset.Insurance != null ? asset.Insurance.Status : null,
-                    InsuranceValue = asset.Insurance != null ? asset.Insurance.InsuredValue : null,
-                    InsuranceCompany = asset.Insurance != null ? asset.Insurance.Company : null,
-                    InsuranceStartDate = asset.Insurance != null ? asset.Insurance.StartDate : null
+                    CustomTrackerName = asset.CustomTrackers.OrderByDescending(ct => ct.CreatedAt).FirstOrDefault() != null ? asset.CustomTrackers.OrderByDescending(ct => ct.CreatedAt).FirstOrDefault().Name : null,
+                    CustomTrackerEndDate = asset.CustomTrackers.OrderByDescending(ct => ct.CreatedAt).FirstOrDefault() != null ? asset.CustomTrackers.OrderByDescending(ct => ct.CreatedAt).FirstOrDefault().EndDate : null
                 })
                 .ToListAsync();
+
+            return new PagedResult<AssetReadDto>
+            {
+                Page = request.Page,
+                PageSize = request.PageSize,
+                TotalCount = totalCount,
+                Items = items,
+                TotalValue = totalValue
+            };
         }
 
         public async Task<AssetReadDto?> GetAssetByIdAsync(int id)
@@ -153,6 +169,36 @@ namespace Infrastructure.Asset
                 Description = asset.Description,
                 CreatedAt = asset.CreatedAt
             };
+        }
+        public async Task<IEnumerable<AssetReadDto>> GetAssetsByUserIdAsync(int userId)
+        {
+            return await _context.Assets
+                .Include(asset => asset.Space)
+                .Include(asset => asset.Warranty)
+                .Include(asset => asset.Insurance)
+                .Where(asset => asset.Space.OwnerId == userId)
+                .Select(asset => new AssetReadDto
+                {
+                    Id = asset.Id,
+                    SpaceId = asset.SpaceId,
+                    SpaceName = asset.Space.Name,
+                    Name = asset.Name,
+                    Category = asset.Category,
+                    Value = asset.Value,
+                    PurchaseDate = asset.PurchaseDate,
+                    Description = asset.Description,
+                    CreatedAt = asset.CreatedAt,
+                    WarrantyEndDate = asset.Warranty != null ? asset.Warranty.EndDate : null,
+                    WarrantyStatus = asset.Warranty != null ? asset.Warranty.Status : null,
+                    WarrantyProvider = asset.Warranty != null ? asset.Warranty.Provider : null,
+                    WarrantyStartDate = asset.Warranty != null ? asset.Warranty.StartDate : null,
+                    InsuranceEndDate = asset.Insurance != null ? asset.Insurance.EndDate : null,
+                    InsuranceStatus = asset.Insurance != null ? asset.Insurance.Status : null,
+                    InsuranceValue = asset.Insurance != null ? asset.Insurance.InsuredValue : null,
+                    InsuranceCompany = asset.Insurance != null ? asset.Insurance.Company : null,
+                    InsuranceStartDate = asset.Insurance != null ? asset.Insurance.StartDate : null
+                })
+                .ToListAsync();
         }
     }
 }

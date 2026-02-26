@@ -28,16 +28,18 @@ namespace Gestionare_Bunuri_Back.Controllers
                 return NotFound();
             return Ok(asset);
         }
-        [HttpGet("my")]
-        public async Task<ActionResult<IEnumerable<AssetReadDto>>> GetMyAssets()
+        [HttpGet("my/paged")]
+        public async Task<ActionResult<PagedResult<AssetReadDto>>> GetMyAssetsPaged([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userIdString = HttpContext.Items["UserId"] as string;
             if (string.IsNullOrEmpty(userIdString))
                 return Unauthorized();
 
             int userId = int.Parse(userIdString);
-            var assets = await _assetService.GetAssetsByUserIdAsync(userId);
-            return Ok(assets);
+            var request = new AssetPagedRequest { Page = page, PageSize = pageSize };
+            var pagedAssets = await _assetService.GetAssetsByUserIdPagedAsync(userId, request);
+
+            return Ok(pagedAssets);
         }
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAsset(int id)

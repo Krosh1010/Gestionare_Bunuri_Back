@@ -28,48 +28,48 @@ namespace Gestionare_Bunuri_Back.Controllers.CoverageStatus
             return Ok(summary);
         }
         [HttpGet("expired-assets")]
-        public async Task<IActionResult> GetExpiredWarrantyAssets()
+        public async Task<IActionResult> GetExpiredWarrantyAssets([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userIdString = HttpContext.Items["UserId"] as string;
             if (string.IsNullOrEmpty(userIdString))
                 return Unauthorized();
 
             int userId = int.Parse(userIdString);
-            var expiredAssets = await _warrantyStatusService.GetExpiredWarrantyAssetsAsync(userId);
+            var expiredAssets = await _warrantyStatusService.GetExpiredWarrantyAssetsAsync(userId, page, pageSize);
             return Ok(expiredAssets);
 
         }
         [HttpGet("expiring-assets")]
-        public async Task<IActionResult> GetExpiringWarrantyAssets()
+        public async Task<IActionResult> GetExpiringWarrantyAssets([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userIdString = HttpContext.Items["UserId"] as string;
             if (string.IsNullOrEmpty(userIdString))
                 return Unauthorized();
 
             int userId = int.Parse(userIdString);
-            var expiringAssets = await _warrantyStatusService.GetExpiringWarrantyAssetsAsync(userId);
+            var expiringAssets = await _warrantyStatusService.GetExpiringWarrantyAssetsAsync(userId, page, pageSize);
             return Ok(expiringAssets);
         }
         [HttpGet("valid-assets")]
-        public async Task<IActionResult> GetValidWarrantyAssets()
+        public async Task<IActionResult> GetValidWarrantyAssets([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userIdString = HttpContext.Items["UserId"] as string;
             if (string.IsNullOrEmpty(userIdString))
                 return Unauthorized();
 
             int userId = int.Parse(userIdString);
-            var validAssets = await _warrantyStatusService.GetValidWarrantyAssetsAsync(userId);
+            var validAssets = await _warrantyStatusService.GetValidWarrantyAssetsAsync(userId, page, pageSize);
             return Ok(validAssets);
         }
         [HttpGet("assets-without-warranty")]
-        public async Task<IActionResult> GetAssetsWithoutWarranty()
+        public async Task<IActionResult> GetAssetsWithoutWarranty([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userIdString = HttpContext.Items["UserId"] as string;
             if (string.IsNullOrEmpty(userIdString))
                 return Unauthorized();
 
             int userId = int.Parse(userIdString);
-            var assets = await _warrantyStatusService.GetAssetsWithoutWarrantyAsync(userId);
+            var assets = await _warrantyStatusService.GetAssetsWithoutWarrantyAsync(userId, page, pageSize);
             return Ok(assets);
         }
 

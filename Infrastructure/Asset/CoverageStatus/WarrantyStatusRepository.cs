@@ -1,3 +1,4 @@
+using Domain.AssetDto;
 using Domain.CoverageStatus;
 using Domain.Warranty;
 using Infrastructure.Abstraction.CoverageStatus;
@@ -46,12 +47,18 @@ namespace Infrastructure.Asset.CoverageStatus
             };
         }
 
-        public async Task<IEnumerable<ExpiredWarrantyAssetDto>> GetExpiredWarrantyAssetsAsync(int userId)
+        public async Task<PagedResult<ExpiredWarrantyAssetDto>> GetExpiredWarrantyAssetsAsync(int userId, int page, int pageSize)
         {
             var now = DateTime.UtcNow;
-            return await _context.Warranties
+            var query = _context.Warranties
                 .Include(w => w.Asset)
-                .Where(w => w.Asset.Space.OwnerId == userId && w.EndDate < now)
+                .Where(w => w.Asset.Space.OwnerId == userId && w.EndDate < now);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(w => w.EndDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(w => new ExpiredWarrantyAssetDto
                 {
                     AssetName = w.Asset.Name,
@@ -61,16 +68,30 @@ namespace Infrastructure.Asset.CoverageStatus
                     EndDate = w.EndDate
                 })
                 .ToListAsync();
+
+            return new PagedResult<ExpiredWarrantyAssetDto>
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                Items = items
+            };
         }
 
-        public async Task<IEnumerable<ExpiringWarrantyAssetDto>> GetExpiringWarrantyAssetsAsync(int userId)
+        public async Task<PagedResult<ExpiringWarrantyAssetDto>> GetExpiringWarrantyAssetsAsync(int userId, int page, int pageSize)
         {
             var now = DateTime.UtcNow;
             var threshold = now.AddDays(30);
 
-            return await _context.Warranties
+            var query = _context.Warranties
                 .Include(w => w.Asset)
-                .Where(w => w.Asset.Space.OwnerId == userId && w.EndDate >= now && w.EndDate <= threshold)
+                .Where(w => w.Asset.Space.OwnerId == userId && w.EndDate >= now && w.EndDate <= threshold);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderBy(w => w.EndDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(w => new ExpiringWarrantyAssetDto
                 {
                     AssetName = w.Asset.Name,
@@ -81,16 +102,30 @@ namespace Infrastructure.Asset.CoverageStatus
                     DaysLeft = EF.Functions.DateDiffDay(now, w.EndDate)
                 })
                 .ToListAsync();
+
+            return new PagedResult<ExpiringWarrantyAssetDto>
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                Items = items
+            };
         }
 
-        public async Task<IEnumerable<ValidWarrantyAssetDto>> GetValidWarrantyAssetsAsync(int userId)
+        public async Task<PagedResult<ValidWarrantyAssetDto>> GetValidWarrantyAssetsAsync(int userId, int page, int pageSize)
         {
             var now = DateTime.UtcNow;
             var threshold = now.AddDays(30);
 
-            return await _context.Warranties
+            var query = _context.Warranties
                 .Include(w => w.Asset)
-                .Where(w => w.Asset.Space.OwnerId == userId && w.EndDate > threshold)
+                .Where(w => w.Asset.Space.OwnerId == userId && w.EndDate > threshold);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderBy(w => w.EndDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(w => new ValidWarrantyAssetDto
                 {
                     AssetName = w.Asset.Name,
@@ -101,19 +136,41 @@ namespace Infrastructure.Asset.CoverageStatus
                     DaysLeft = EF.Functions.DateDiffDay(now, w.EndDate)
                 })
                 .ToListAsync();
+
+            return new PagedResult<ValidWarrantyAssetDto>
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                Items = items
+            };
         }
 
-        public async Task<IEnumerable<AssetWithoutWarrantyDto>> GetAssetsWithoutWarrantyAsync(int userId)
+        public async Task<PagedResult<AssetWithoutWarrantyDto>> GetAssetsWithoutWarrantyAsync(int userId, int page, int pageSize)
         {
-            return await _context.Assets
+            var query = _context.Assets
                 .Include(a => a.Space)
-                .Where(a => a.Space.OwnerId == userId && a.Warranty == null)
+                .Where(a => a.Space.OwnerId == userId && a.Warranty == null);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderBy(a => a.Name)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(a => new AssetWithoutWarrantyDto
                 {
                     AssetName = a.Name,
                     Category = a.Category,
                 })
                 .ToListAsync();
+
+            return new PagedResult<AssetWithoutWarrantyDto>
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                Items = items
+            };
         }
     }
 }

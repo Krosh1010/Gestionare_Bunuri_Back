@@ -47,6 +47,8 @@ builder.Services.AddScoped<IInsuranceStatusRepository, InsuranceStatusRepository
 builder.Services.AddScoped<IInsuranceStatusService, InsuranceStatusService>();
 builder.Services.AddScoped<IExportRepository, ExportRepository>();
 builder.Services.AddScoped<IExportService, ExportService>();
+builder.Services.AddScoped<ICustomTrackerRepository, CustomTrackerRepository>();
+builder.Services.AddScoped<ICustomTrackerService, CustomTrackerService>();
 
 
 

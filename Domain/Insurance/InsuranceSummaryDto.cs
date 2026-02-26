@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 
 namespace Domain.Insurance
 {
-    namespace Domain.Insurance
-    {
         public class InsuranceSummaryDto
         {
             public int TotalCount { get; set; }
@@ -17,6 +15,5 @@ namespace Domain.Insurance
             public int AssetsWithoutInsuranceCount { get; set; } // bunuri fără asigurare
             public decimal TotalInsuredValue { get; set; } // suma totală asigurată
         }
-    }
 
 }

@@ -1,5 +1,5 @@
 using Domain.CoverageStatus;
-using Domain.Insurance.Domain.Insurance;
+using Domain.Insurance;
 using Infrastructure.Abstraction.CoverageStatus;
 using Infrastructure.DataBase;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
 using System.Linq;
+using Domain.AssetDto;
 
 namespace Infrastructure.Asset.CoverageStatus
 {
@@ -51,12 +52,18 @@ namespace Infrastructure.Asset.CoverageStatus
             };
         }
 
-        public async Task<IEnumerable<ExpiredInsuranceAssetDto>> GetExpiredInsuranceAssetsAsync(int userId)
+        public async Task<PagedResult<ExpiredInsuranceAssetDto>> GetExpiredInsuranceAssetsAsync(int userId, int page, int pageSize)
         {
             var now = DateTime.UtcNow;
-            return await _context.Insurances
+            var query = _context.Insurances
                 .Include(i => i.Asset)
-                .Where(i => i.Asset.Space.OwnerId == userId && i.EndDate < now)
+                .Where(i => i.Asset.Space.OwnerId == userId && i.EndDate < now);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(i => i.EndDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(i => new ExpiredInsuranceAssetDto
                 {
                     AssetName = i.Asset.Name,
@@ -67,16 +74,30 @@ namespace Infrastructure.Asset.CoverageStatus
                     EndDate = i.EndDate
                 })
                 .ToListAsync();
+
+            return new PagedResult<ExpiredInsuranceAssetDto>
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                Items = items
+            };
         }
 
-        public async Task<IEnumerable<ExpiringInsuranceAssetDto>> GetExpiringInsuranceAssetsAsync(int userId)
+        public async Task<PagedResult<ExpiringInsuranceAssetDto>> GetExpiringInsuranceAssetsAsync(int userId, int page, int pageSize)
         {
             var now = DateTime.UtcNow;
             var threshold = now.AddDays(30);
 
-            return await _context.Insurances
+            var query = _context.Insurances
                 .Include(i => i.Asset)
-                .Where(i => i.Asset.Space.OwnerId == userId && i.EndDate >= now && i.EndDate <= threshold)
+                .Where(i => i.Asset.Space.OwnerId == userId && i.EndDate >= now && i.EndDate <= threshold);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderBy(i => i.EndDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(i => new ExpiringInsuranceAssetDto
                 {
                     AssetName = i.Asset.Name,
@@ -88,16 +109,30 @@ namespace Infrastructure.Asset.CoverageStatus
                     DaysLeft = EF.Functions.DateDiffDay(now, i.EndDate)
                 })
                 .ToListAsync();
+
+            return new PagedResult<ExpiringInsuranceAssetDto>
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                Items = items
+            };
         }
 
-        public async Task<IEnumerable<ValidInsuranceAssetDto>> GetValidInsuranceAssetsAsync(int userId)
+        public async Task<PagedResult<ValidInsuranceAssetDto>> GetValidInsuranceAssetsAsync(int userId, int page, int pageSize)
         {
             var now = DateTime.UtcNow;
             var threshold = now.AddDays(30);
 
-            return await _context.Insurances
+            var query = _context.Insurances
                 .Include(i => i.Asset)
-                .Where(i => i.Asset.Space.OwnerId == userId && i.EndDate > threshold)
+                .Where(i => i.Asset.Space.OwnerId == userId && i.EndDate > threshold);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderBy(i => i.EndDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(i => new ValidInsuranceAssetDto
                 {
                     AssetName = i.Asset.Name,
@@ -109,19 +144,41 @@ namespace Infrastructure.Asset.CoverageStatus
                     Value = i.InsuredValue
                 })
                 .ToListAsync();
+
+            return new PagedResult<ValidInsuranceAssetDto>
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                Items = items
+            };
         }
 
-        public async Task<IEnumerable<AssetWithoutInsuranceDto>> GetAssetsWithoutInsuranceAsync(int userId)
+        public async Task<PagedResult<AssetWithoutInsuranceDto>> GetAssetsWithoutInsuranceAsync(int userId, int page, int pageSize)
         {
-            return await _context.Assets
+            var query = _context.Assets
                 .Include(a => a.Space)
-                .Where(a => a.Space.OwnerId == userId && a.Insurance == null)
+                .Where(a => a.Space.OwnerId == userId && a.Insurance == null);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderBy(a => a.Name)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(a => new AssetWithoutInsuranceDto
                 {
                     AssetName = a.Name,
                     Category = a.Category
                 })
                 .ToListAsync();
+
+            return new PagedResult<AssetWithoutInsuranceDto>
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                Items = items
+            };
         }
     }
 }

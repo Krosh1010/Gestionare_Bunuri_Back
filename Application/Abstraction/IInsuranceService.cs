@@ -1,6 +1,6 @@
 ﻿
 using Domain.Insurance;
-using Domain.Insurance.Domain.Insurance;
+
 
 namespace Application.Abstraction
 {
