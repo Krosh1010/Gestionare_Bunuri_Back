@@ -361,3 +361,38 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+############################################
+# GENERAL
+############################################
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.temp
+
+############################################
+# .NET / C#
+############################################
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.idea/
+.vscode/
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+
+# build outputs
+*.dll
+*.exe
+*.pdb
+*.cache
+publish/
+out/

@@ -52,11 +52,43 @@ namespace Infrastructure.Asset
 
         public async Task<PagedResult<AssetReadDto>> GetAssetsByUserIdPagedAsync(int userId, AssetPagedRequest request)
         {
+
             var query = _context.Assets
                 .Include(asset => asset.Space)
                 .Include(asset => asset.Warranty)
                 .Include(asset => asset.Insurance)
                 .Where(asset => asset.Space.OwnerId == userId);
+
+            // Filtrare după nume (conține, case-insensitive)
+            if (!string.IsNullOrWhiteSpace(request.Name))
+            {
+                var nameLower = request.Name.ToLower();
+                query = query.Where(asset => asset.Name.ToLower().Contains(nameLower));
+            }
+
+            // Filtrare după categorie
+            if (!string.IsNullOrWhiteSpace(request.Category))
+            {
+                query = query.Where(asset => asset.Category != null && asset.Category == request.Category);
+            }
+
+            // Filtrare după preț minim
+            if (request.MinValue.HasValue)
+            {
+                query = query.Where(asset => asset.Value >= request.MinValue.Value);
+            }
+
+            // Filtrare după preț maxim
+            if (request.MaxValue.HasValue)
+            {
+                query = query.Where(asset => asset.Value <= request.MaxValue.Value);
+            }
+
+            // Filtrare după spațiu
+            if (request.SpaceId.HasValue)
+            {
+                query = query.Where(asset => asset.SpaceId == request.SpaceId.Value);
+            }
 
             var totalCount = await query.CountAsync();
             var totalValue = await query.SumAsync(asset => asset.Value);
