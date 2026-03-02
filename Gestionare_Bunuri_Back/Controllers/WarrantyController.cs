@@ -16,9 +16,9 @@ namespace Gestionare_Bunuri_Back.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> CreateWarranty([FromBody] WarrantyCreateDto dto)
+        public async Task<IActionResult> CreateWarranty([FromForm] WarrantyCreateDto dto, IFormFile? document)
         {
-            var result = await _warrantyService.CreateWarrantyAsync(dto);
+            var result = await _warrantyService.CreateWarrantyAsync(dto, document);
             return Ok(result);
         }
 
@@ -48,13 +48,30 @@ namespace Gestionare_Bunuri_Back.Controllers
         }
 
         [HttpPatch("by-asset/{assetId}")]
-        public async Task<IActionResult> PatchWarrantyByAssetId(int assetId, [FromBody] WarrantyUpdateDto dto)
+        public async Task<IActionResult> PatchWarrantyByAssetId(int assetId, [FromForm] WarrantyUpdateDto dto, IFormFile? document)
         {
-            var result = await _warrantyService.PatchWarrantyByAssetIdAsync(assetId, dto);
+            var result = await _warrantyService.PatchWarrantyByAssetIdAsync(assetId, dto, document);
             if (result == null)
                 return NotFound();
             return Ok(result);
         }
 
+        [HttpGet("by-asset/{assetId}/document/download")]
+        public async Task<IActionResult> DownloadWarrantyDocument(int assetId)
+        {
+            var result = await _warrantyService.DownloadDocumentAsync(assetId);
+            if (result == null)
+                return NotFound();
+            return File(result.Value.fileBytes, result.Value.contentType, result.Value.fileName);
+        }
+
+        [HttpDelete("by-asset/{assetId}/document")]
+        public async Task<IActionResult> DeleteWarrantyDocument(int assetId)
+        {
+            var deleted = await _warrantyService.DeleteDocumentAsync(assetId);
+            if (!deleted)
+                return NotFound();
+            return NoContent();
+        }
     }
 }

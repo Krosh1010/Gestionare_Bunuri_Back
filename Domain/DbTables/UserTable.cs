@@ -23,6 +23,7 @@ namespace Domain.DbTables
 
         public ICollection<SpaceUserTable> SpaceUsers { get; set; } = new List<SpaceUserTable>();
         public ICollection<NotificationTable> Notifications { get; set; } = new List<NotificationTable>();
+        public ICollection<DeviceTokenTable> DeviceTokens { get; set; } = new List<DeviceTokenTable>();
     }
 }
 

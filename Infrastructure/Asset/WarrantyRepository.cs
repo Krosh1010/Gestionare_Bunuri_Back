@@ -46,6 +46,9 @@ namespace Infrastructure.Asset
             if (warranty == null)
                 return null;
 
+            var document = await _context.Documents
+                .FirstOrDefaultAsync(d => d.AssetId == warranty.AssetId && d.Type == DocumentType.WARRANTY);
+
             return new WarrantyReadDto
             {
                 Id = warranty.Id,
@@ -53,7 +56,9 @@ namespace Infrastructure.Asset
                 Provider = warranty.Provider,
                 StartDate = warranty.StartDate,
                 EndDate = warranty.EndDate,
-                Status = warranty.Status
+                Status = warranty.Status,
+                DocumentFileName = document?.FileName,
+                DocumentId = document?.Id
             };
         }
 
@@ -65,6 +70,9 @@ namespace Infrastructure.Asset
             if (warranty == null)
                 return null;
 
+            var document = await _context.Documents
+                .FirstOrDefaultAsync(d => d.AssetId == assetId && d.Type == DocumentType.WARRANTY);
+
             return new WarrantyReadDto
             {
                 Id = warranty.Id,
@@ -72,7 +80,9 @@ namespace Infrastructure.Asset
                 Provider = warranty.Provider,
                 StartDate = warranty.StartDate,
                 EndDate = warranty.EndDate,
-                Status = warranty.Status
+                Status = warranty.Status,
+                DocumentFileName = document?.FileName,
+                DocumentId = document?.Id
             };
         }
 
@@ -81,6 +91,16 @@ namespace Infrastructure.Asset
             var warranty = await _context.Warranties.FirstOrDefaultAsync(w => w.AssetId == assetId);
             if (warranty == null)
                 return false;
+
+            // Ștergem și documentul asociat
+            var document = await _context.Documents
+                .FirstOrDefaultAsync(d => d.AssetId == assetId && d.Type == DocumentType.WARRANTY);
+            if (document != null)
+            {
+                if (File.Exists(document.FilePath))
+                    File.Delete(document.FilePath);
+                _context.Documents.Remove(document);
+            }
 
             _context.Warranties.Remove(warranty);
             await _context.SaveChangesAsync();
@@ -102,6 +122,9 @@ namespace Infrastructure.Asset
 
             await _context.SaveChangesAsync();
 
+            var document = await _context.Documents
+                .FirstOrDefaultAsync(d => d.AssetId == assetId && d.Type == DocumentType.WARRANTY);
+
             return new WarrantyReadDto
             {
                 Id = warranty.Id,
@@ -109,7 +132,9 @@ namespace Infrastructure.Asset
                 Provider = warranty.Provider,
                 StartDate = warranty.StartDate,
                 EndDate = warranty.EndDate,
-                Status = warranty.Status
+                Status = warranty.Status,
+                DocumentFileName = document?.FileName,
+                DocumentId = document?.Id
             };
         }
     }

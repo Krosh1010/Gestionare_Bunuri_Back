@@ -364,5 +364,37 @@ namespace Infrastructure.Asset
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<List<int>> GetAllOwnerUserIdsAsync()
+        {
+            return await _context.Spaces
+                .Select(s => s.OwnerId)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        public async Task<List<NotificationTable>> GetUnsentPushNotificationsAsync(int userId)
+        {
+            return await _context.Notifications
+                .Include(n => n.Asset)
+                .Where(n => n.UserId == userId && !n.IsRead && !n.IsPushSent)
+                .ToListAsync();
+        }
+
+        public async Task MarkNotificationsAsPushSentAsync(List<int> notificationIds)
+        {
+            if (!notificationIds.Any()) return;
+
+            var notifications = await _context.Notifications
+                .Where(n => notificationIds.Contains(n.Id))
+                .ToListAsync();
+
+            foreach (var notification in notifications)
+            {
+                notification.IsPushSent = true;
+            }
+
+            await _context.SaveChangesAsync();
+        }
     }
 }

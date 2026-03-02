@@ -16,7 +16,7 @@ namespace Infrastructure.Asset
             _context = context;
         }
 
-        public async Task CreateInsuranceAsync(InsuranceCreateDto dto)
+        public async Task<InsuranceReadDto> CreateInsuranceAsync(InsuranceCreateDto dto)
         {
             var insurance = new InsuranceTable
             {
@@ -29,14 +29,6 @@ namespace Infrastructure.Asset
 
             _context.Insurances.Add(insurance);
             await _context.SaveChangesAsync();
-        }
-
-        public async Task<InsuranceReadDto?> GetInsuranceByAssetIdAsync(int assetId)
-        {
-            var insurance = await _context.Insurances
-                .FirstOrDefaultAsync(i => i.AssetId == assetId);
-            if (insurance == null)
-                return null;
 
             return new InsuranceReadDto
             {
@@ -50,11 +42,45 @@ namespace Infrastructure.Asset
             };
         }
 
+        public async Task<InsuranceReadDto?> GetInsuranceByAssetIdAsync(int assetId)
+        {
+            var insurance = await _context.Insurances
+                .FirstOrDefaultAsync(i => i.AssetId == assetId);
+            if (insurance == null)
+                return null;
+
+            var document = await _context.Documents
+                .FirstOrDefaultAsync(d => d.AssetId == assetId && d.Type == DocumentType.INSURANCE);
+
+            return new InsuranceReadDto
+            {
+                Id = insurance.Id,
+                AssetId = insurance.AssetId,
+                Company = insurance.Company,
+                InsuredValue = insurance.InsuredValue,
+                StartDate = insurance.StartDate,
+                EndDate = insurance.EndDate,
+                Status = insurance.Status,
+                DocumentFileName = document?.FileName,
+                DocumentId = document?.Id
+            };
+        }
+
         public async Task<bool> DeleteInsuranceByAssetIdAsync(int assetId)
         {
             var insurance = await _context.Insurances.FirstOrDefaultAsync(i => i.AssetId == assetId);
             if (insurance == null)
                 return false;
+
+            // Ștergem și documentul asociat
+            var document = await _context.Documents
+                .FirstOrDefaultAsync(d => d.AssetId == assetId && d.Type == DocumentType.INSURANCE);
+            if (document != null)
+            {
+                if (File.Exists(document.FilePath))
+                    File.Delete(document.FilePath);
+                _context.Documents.Remove(document);
+            }
 
             _context.Insurances.Remove(insurance);
             await _context.SaveChangesAsync();
@@ -78,6 +104,9 @@ namespace Infrastructure.Asset
 
             await _context.SaveChangesAsync();
 
+            var document = await _context.Documents
+                .FirstOrDefaultAsync(d => d.AssetId == assetId && d.Type == DocumentType.INSURANCE);
+
             return new InsuranceReadDto
             {
                 Id = insurance.Id,
@@ -86,7 +115,9 @@ namespace Infrastructure.Asset
                 InsuredValue = insurance.InsuredValue,
                 StartDate = insurance.StartDate,
                 EndDate = insurance.EndDate,
-                Status = insurance.Status
+                Status = insurance.Status,
+                DocumentFileName = document?.FileName,
+                DocumentId = document?.Id
             };
         }
     }

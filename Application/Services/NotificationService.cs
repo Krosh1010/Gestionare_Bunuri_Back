@@ -29,6 +29,21 @@ namespace Application.Services
         {
             return await _notificationRepository.DeleteNotificationAsync(notificationId, userId);
         }
+
+        public async Task<List<int>> GetAllOwnerUserIdsAsync()
+        {
+            return await _notificationRepository.GetAllOwnerUserIdsAsync();
+        }
+
+        public async Task<List<NotificationTable>> GetUnsentPushNotificationsAsync(int userId)
+        {
+            return await _notificationRepository.GetUnsentPushNotificationsAsync(userId);
+        }
+
+        public async Task MarkNotificationsAsPushSentAsync(List<int> notificationIds)
+        {
+            await _notificationRepository.MarkNotificationsAsPushSentAsync(notificationIds);
+        }
     }
 }
 

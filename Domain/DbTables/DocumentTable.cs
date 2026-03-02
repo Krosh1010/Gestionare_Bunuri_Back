@@ -23,6 +23,9 @@ namespace Domain.DbTables
         [Required]
         public DocumentType Type { get; set; }
 
+        [Required, MaxLength(255)]
+        public string FileName { get; set; } = null!;
+
         [Required, MaxLength(500)]
         public string FilePath { get; set; } = null!;
 

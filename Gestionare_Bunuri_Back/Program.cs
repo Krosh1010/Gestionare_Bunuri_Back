@@ -1,4 +1,5 @@
 ﻿using Gestionare_Bunuri_Back.Middleware;
+using Gestionare_Bunuri_Back.Services;
 using Infrastructure.DataBase;
 using Infrastructure.Dashboard;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,8 @@ using Infrastructure.User;
 using QuestPDF.Infrastructure;
 using Infrastructure.Abstraction.CoverageStatus;
 using Infrastructure.Asset.CoverageStatus;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 
 var builder = WebApplication.CreateBuilder(args);
 QuestPDF.Settings.License = LicenseType.Community;
@@ -49,6 +52,46 @@ builder.Services.AddScoped<IExportRepository, ExportRepository>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<ICustomTrackerRepository, CustomTrackerRepository>();
 builder.Services.AddScoped<ICustomTrackerService, CustomTrackerService>();
+
+// Device Token services
+builder.Services.AddScoped<IDeviceTokenRepository, DeviceTokenRepository>();
+builder.Services.AddScoped<IDeviceTokenService, DeviceTokenService>();
+
+// Document services
+builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+
+// Push Notification service
+builder.Services.AddScoped<IPushNotificationService, PushNotificationService>();
+
+// Background service pentru notificări push
+builder.Services.AddHostedService<NotificationBackgroundService>();
+
+// Firebase Admin SDK initialization
+var firebaseCredentialPath = builder.Configuration["Firebase:CredentialPath"];
+if (!string.IsNullOrEmpty(firebaseCredentialPath) && File.Exists(firebaseCredentialPath))
+{
+    FirebaseApp.Create(new AppOptions
+    {
+        Credential = GoogleCredential.FromFile(firebaseCredentialPath)
+    });
+}
+else
+{
+    // Încercăm să inițializăm din variabila de mediu GOOGLE_APPLICATION_CREDENTIALS
+    try
+    {
+        FirebaseApp.Create(new AppOptions
+        {
+            Credential = GoogleCredential.GetApplicationDefault()
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"⚠️ Firebase nu a fost inițializat: {ex.Message}");
+        Console.WriteLine("Push notifications nu vor funcționa fără configurarea Firebase.");
+    }
+}
 
 
 

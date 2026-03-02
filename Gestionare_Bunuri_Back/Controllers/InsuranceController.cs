@@ -16,10 +16,10 @@ namespace Gestionare_Bunuri_Back.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> CreateInsurance([FromBody] InsuranceCreateDto dto)
+        public async Task<IActionResult> CreateInsurance([FromForm] InsuranceCreateDto dto, IFormFile? document)
         {
-            await _insuranceService.CreateInsuranceAsync(dto);
-            return NoContent();
+            var result = await _insuranceService.CreateInsuranceAsync(dto, document);
+            return Ok(result);
         }
 
         [HttpGet("by-asset/{assetId}")]
@@ -39,13 +39,30 @@ namespace Gestionare_Bunuri_Back.Controllers
             return NoContent();
         }
         [HttpPatch("by-asset/{assetId}")]
-        public async Task<IActionResult> PatchInsuranceByAssetId(int assetId, [FromBody] InsuranceUpdateDto dto)
+        public async Task<IActionResult> PatchInsuranceByAssetId(int assetId, [FromForm] InsuranceUpdateDto dto, IFormFile? document)
         {
-            var result = await _insuranceService.PatchInsuranceByAssetIdAsync(assetId, dto);
+            var result = await _insuranceService.PatchInsuranceByAssetIdAsync(assetId, dto, document);
             if (result == null)
                 return NotFound();
             return Ok(result);
         }
 
+        [HttpGet("by-asset/{assetId}/document/download")]
+        public async Task<IActionResult> DownloadInsuranceDocument(int assetId)
+        {
+            var result = await _insuranceService.DownloadDocumentAsync(assetId);
+            if (result == null)
+                return NotFound();
+            return File(result.Value.fileBytes, result.Value.contentType, result.Value.fileName);
+        }
+
+        [HttpDelete("by-asset/{assetId}/document")]
+        public async Task<IActionResult> DeleteInsuranceDocument(int assetId)
+        {
+            var deleted = await _insuranceService.DeleteDocumentAsync(assetId);
+            if (!deleted)
+                return NotFound();
+            return NoContent();
+        }
     }
 }

@@ -15,5 +15,7 @@ namespace Domain.Warranty
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public WarrantyStatus Status { get; set; }
+        public string? DocumentFileName { get; set; }
+        public int? DocumentId { get; set; }
     }
 }

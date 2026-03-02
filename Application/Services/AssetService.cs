@@ -25,7 +25,7 @@ public class AssetService : IAssetService
     }
 
 
-    public async Task<PagedResult<AssetReadDto>> GetAssetsByUserIdPagedAsync(int userId, AssetPagedRequest request)
+    public async Task<PagedResult<AssetListDto>> GetAssetsByUserIdPagedAsync(int userId, AssetPagedRequest request)
     {
         return await _assetRepository.GetAssetsByUserIdPagedAsync(userId, request);
     }

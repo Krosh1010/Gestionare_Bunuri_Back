@@ -50,7 +50,7 @@ namespace Infrastructure.Asset
             };
         }
 
-        public async Task<PagedResult<AssetReadDto>> GetAssetsByUserIdPagedAsync(int userId, AssetPagedRequest request)
+        public async Task<PagedResult<AssetListDto>> GetAssetsByUserIdPagedAsync(int userId, AssetPagedRequest request)
         {
 
             var query = _context.Assets
@@ -94,11 +94,10 @@ namespace Infrastructure.Asset
             var totalValue = await query.SumAsync(asset => asset.Value);
 
             var items = await query
-                .Include(asset => asset.CustomTrackers)
                 .OrderByDescending(asset => asset.CreatedAt)
                 .Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize)
-                .Select(asset => new AssetReadDto
+                .Select(asset => new AssetListDto
                 {
                     Id = asset.Id,
                     SpaceId = asset.SpaceId,
@@ -112,12 +111,12 @@ namespace Infrastructure.Asset
                     WarrantyStatus = asset.Warranty != null ? asset.Warranty.Status : null,
                     InsuranceEndDate = asset.Insurance != null ? asset.Insurance.EndDate : null,
                     InsuranceStatus = asset.Insurance != null ? asset.Insurance.Status : null,
-                    CustomTrackerName = asset.CustomTrackers.OrderByDescending(ct => ct.CreatedAt).FirstOrDefault() != null ? asset.CustomTrackers.OrderByDescending(ct => ct.CreatedAt).FirstOrDefault().Name : null,
-                    CustomTrackerEndDate = asset.CustomTrackers.OrderByDescending(ct => ct.CreatedAt).FirstOrDefault() != null ? asset.CustomTrackers.OrderByDescending(ct => ct.CreatedAt).FirstOrDefault().EndDate : null
+                    CustomTrackerName = asset.CustomTrackers.OrderByDescending(ct => ct.CreatedAt).Select(ct => ct.Name).FirstOrDefault(),
+                    CustomTrackerEndDate = asset.CustomTrackers.OrderByDescending(ct => ct.CreatedAt).Select(ct => ct.EndDate).FirstOrDefault()
                 })
                 .ToListAsync();
 
-            return new PagedResult<AssetReadDto>
+            return new PagedResult<AssetListDto>
             {
                 Page = request.Page,
                 PageSize = request.PageSize,

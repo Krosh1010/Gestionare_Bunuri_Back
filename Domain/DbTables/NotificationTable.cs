@@ -38,5 +38,10 @@ namespace Domain.DbTables
 
         // true = notificare "a expirat", false = notificare "expiră curând"
         public bool IsExpired { get; set; } = false;
+
+        /// <summary>
+        /// true dacă notificarea push a fost deja trimisă pe dispozitiv
+        /// </summary>
+        public bool IsPushSent { get; set; } = false;
     }
 }

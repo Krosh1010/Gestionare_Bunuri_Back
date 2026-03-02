@@ -19,6 +19,7 @@ namespace Infrastructure.DataBase
         public DbSet<NotificationTable> Notifications => Set<NotificationTable>();
         public DbSet<InsuranceSuggestionTable> InsuranceSuggestions => Set<InsuranceSuggestionTable>();
         public DbSet<CustomTrackerTable> CustomTrackers => Set<CustomTrackerTable>();
+        public DbSet<DeviceTokenTable> DeviceTokens => Set<DeviceTokenTable>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -160,6 +161,18 @@ namespace Infrastructure.DataBase
                 .WithMany(a => a.CustomTrackers)
                 .HasForeignKey(ct => ct.AssetId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // DeviceToken -> User (Cascade)
+            modelBuilder.Entity<DeviceTokenTable>()
+                .HasOne(dt => dt.User)
+                .WithMany(u => u.DeviceTokens)
+                .HasForeignKey(dt => dt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Index unic pe Token (un device = un token)
+            modelBuilder.Entity<DeviceTokenTable>()
+                .HasIndex(dt => dt.Token)
+                .IsUnique();
         }
     }
 }
