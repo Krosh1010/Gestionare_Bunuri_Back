@@ -35,7 +35,7 @@ public class AssetService : IAssetService
         return await _assetRepository.DeleteAssetAsync(id);
     }
 
-    public async Task<AssetReadDto?> PatchAssetAsync(int assetId, AssetUpdateDto dto)
+    public async Task<bool> PatchAssetAsync(int assetId, AssetUpdateDto dto)
     {
         return await _assetRepository.PatchAssetAsync(assetId, dto);
     }

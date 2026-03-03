@@ -93,11 +93,20 @@ namespace Infrastructure.Asset
             var totalCount = await query.CountAsync();
             var totalValue = await query.SumAsync(asset => asset.Value);
 
-            var items = await query
+            var assets = await query
                 .OrderByDescending(asset => asset.CreatedAt)
                 .Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize)
-                .Select(asset => new AssetListDto
+                .Include(asset => asset.CustomTrackers)
+                .ToListAsync();
+
+            var items = assets.Select(asset =>
+            {
+                var latestTracker = asset.CustomTrackers?
+                    .OrderByDescending(ct => ct.CreatedAt)
+                    .FirstOrDefault();
+
+                return new AssetListDto
                 {
                     Id = asset.Id,
                     SpaceId = asset.SpaceId,
@@ -107,14 +116,15 @@ namespace Infrastructure.Asset
                     Value = asset.Value,
                     PurchaseDate = asset.PurchaseDate,
                     Description = asset.Description,
-                    WarrantyEndDate = asset.Warranty != null ? asset.Warranty.EndDate : null,
-                    WarrantyStatus = asset.Warranty != null ? asset.Warranty.Status : null,
-                    InsuranceEndDate = asset.Insurance != null ? asset.Insurance.EndDate : null,
-                    InsuranceStatus = asset.Insurance != null ? asset.Insurance.Status : null,
-                    CustomTrackerName = asset.CustomTrackers.OrderByDescending(ct => ct.CreatedAt).Select(ct => ct.Name).FirstOrDefault(),
-                    CustomTrackerEndDate = asset.CustomTrackers.OrderByDescending(ct => ct.CreatedAt).Select(ct => ct.EndDate).FirstOrDefault()
-                })
-                .ToListAsync();
+                    WarrantyEndDate = asset.Warranty?.EndDate,
+                    WarrantyStatus = asset.Warranty?.Status,
+                    InsuranceEndDate = asset.Insurance?.EndDate,
+                    InsuranceStatus = asset.Insurance?.Status,
+                    CustomTrackerName = latestTracker?.Name,
+                    CustomTrackerEndDate = latestTracker?.EndDate,
+                    CustomTrackerStatus = latestTracker?.Status
+                };
+            }).ToList();
 
             return new PagedResult<AssetListDto>
             {
@@ -130,12 +140,19 @@ namespace Infrastructure.Asset
         {
             var asset = await _context.Assets
                 .Include(a => a.Space)
+                .Include(a => a.Warranty)
+                .Include(a => a.Insurance)
+                .Include(a => a.CustomTrackers)
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (asset == null)
             {
                 return null;
             }
+
+            var latestTracker = asset.CustomTrackers?
+                .OrderByDescending(ct => ct.CreatedAt)
+                .FirstOrDefault();
 
             return new AssetReadDto
             {
@@ -147,7 +164,19 @@ namespace Infrastructure.Asset
                 Value = asset.Value,
                 PurchaseDate = asset.PurchaseDate,
                 Description = asset.Description,
-                CreatedAt = asset.CreatedAt
+                CreatedAt = asset.CreatedAt,
+                WarrantyEndDate = asset.Warranty?.EndDate,
+                WarrantyStatus = asset.Warranty?.Status,
+                WarrantyProvider = asset.Warranty?.Provider,
+                WarrantyStartDate = asset.Warranty?.StartDate,
+                InsuranceEndDate = asset.Insurance?.EndDate,
+                InsuranceStatus = asset.Insurance?.Status,
+                InsuranceValue = asset.Insurance?.InsuredValue,
+                InsuranceCompany = asset.Insurance?.Company,
+                InsuranceStartDate = asset.Insurance?.StartDate,
+                CustomTrackerName = latestTracker?.Name,
+                CustomTrackerEndDate = latestTracker?.EndDate,
+                CustomTrackerStatus = latestTracker?.Status
             };
         }
 
@@ -162,17 +191,14 @@ namespace Infrastructure.Asset
             return true;
         }
 
-        public async Task<AssetReadDto?> PatchAssetAsync(int assetId, AssetUpdateDto dto)
+        public async Task<bool> PatchAssetAsync(int assetId, AssetUpdateDto dto)
         {
-            var asset = await _context.Assets.Include(a => a.Space).FirstOrDefaultAsync(a => a.Id == assetId);
+            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == assetId);
             if (asset == null)
-                return null;
+                return false;
 
             if (dto.SpaceId.HasValue && dto.SpaceId.Value != asset.SpaceId)
-            {
                 asset.SpaceId = dto.SpaceId.Value;
-                asset.Space = await _context.Spaces.FindAsync(dto.SpaceId.Value);
-            }
             if (dto.Name != null)
                 asset.Name = dto.Name;
             if (dto.Category != null)
@@ -185,30 +211,25 @@ namespace Infrastructure.Asset
                 asset.Description = dto.Description;
 
             await _context.SaveChangesAsync();
-
-            var space = asset.Space ?? await _context.Spaces.FindAsync(asset.SpaceId);
-
-            return new AssetReadDto
-            {
-                Id = asset.Id,
-                SpaceId = asset.SpaceId,
-                SpaceName = space?.Name ?? string.Empty,
-                Name = asset.Name,
-                Category = asset.Category,
-                Value = asset.Value,
-                PurchaseDate = asset.PurchaseDate,
-                Description = asset.Description,
-                CreatedAt = asset.CreatedAt
-            };
+            return true;
         }
         public async Task<IEnumerable<AssetReadDto>> GetAssetsByUserIdAsync(int userId)
         {
-            return await _context.Assets
+            var assets = await _context.Assets
                 .Include(asset => asset.Space)
                 .Include(asset => asset.Warranty)
                 .Include(asset => asset.Insurance)
+                .Include(asset => asset.CustomTrackers)
                 .Where(asset => asset.Space.OwnerId == userId)
-                .Select(asset => new AssetReadDto
+                .ToListAsync();
+
+            return assets.Select(asset =>
+            {
+                var latestTracker = asset.CustomTrackers?
+                    .OrderByDescending(ct => ct.CreatedAt)
+                    .FirstOrDefault();
+
+                return new AssetReadDto
                 {
                     Id = asset.Id,
                     SpaceId = asset.SpaceId,
@@ -219,17 +240,20 @@ namespace Infrastructure.Asset
                     PurchaseDate = asset.PurchaseDate,
                     Description = asset.Description,
                     CreatedAt = asset.CreatedAt,
-                    WarrantyEndDate = asset.Warranty != null ? asset.Warranty.EndDate : null,
-                    WarrantyStatus = asset.Warranty != null ? asset.Warranty.Status : null,
-                    WarrantyProvider = asset.Warranty != null ? asset.Warranty.Provider : null,
-                    WarrantyStartDate = asset.Warranty != null ? asset.Warranty.StartDate : null,
-                    InsuranceEndDate = asset.Insurance != null ? asset.Insurance.EndDate : null,
-                    InsuranceStatus = asset.Insurance != null ? asset.Insurance.Status : null,
-                    InsuranceValue = asset.Insurance != null ? asset.Insurance.InsuredValue : null,
-                    InsuranceCompany = asset.Insurance != null ? asset.Insurance.Company : null,
-                    InsuranceStartDate = asset.Insurance != null ? asset.Insurance.StartDate : null
-                })
-                .ToListAsync();
+                    WarrantyEndDate = asset.Warranty?.EndDate,
+                    WarrantyStatus = asset.Warranty?.Status,
+                    WarrantyProvider = asset.Warranty?.Provider,
+                    WarrantyStartDate = asset.Warranty?.StartDate,
+                    InsuranceEndDate = asset.Insurance?.EndDate,
+                    InsuranceStatus = asset.Insurance?.Status,
+                    InsuranceValue = asset.Insurance?.InsuredValue,
+                    InsuranceCompany = asset.Insurance?.Company,
+                    InsuranceStartDate = asset.Insurance?.StartDate,
+                    CustomTrackerName = latestTracker?.Name,
+                    CustomTrackerEndDate = latestTracker?.EndDate,
+                    CustomTrackerStatus = latestTracker?.Status
+                };
+            }).ToList();
         }
     }
 }

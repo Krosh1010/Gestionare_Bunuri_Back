@@ -7,6 +7,6 @@ public interface IAssetService
     Task<AssetReadDto?> GetAssetByIdAsync(int id);
     Task<PagedResult<AssetListDto>> GetAssetsByUserIdPagedAsync(int userId, AssetPagedRequest request);
     Task<bool> DeleteAssetAsync(int id);
-    Task<AssetReadDto?> PatchAssetAsync(int assetId, AssetUpdateDto dto);
+    Task<bool> PatchAssetAsync(int assetId, AssetUpdateDto dto);
     Task<IEnumerable<AssetReadDto>> GetAssetsByUserIdAsync(int userId);
 }

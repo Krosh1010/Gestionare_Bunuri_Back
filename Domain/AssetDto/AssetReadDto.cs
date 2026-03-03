@@ -33,5 +33,6 @@ namespace Domain.AssetDto
         // CustomTracker info
         public string? CustomTrackerName { get; set; }
         public DateTime? CustomTrackerEndDate { get; set; }
+        public CustomTrackerStatus? CustomTrackerStatus { get; set; }
     }
 }

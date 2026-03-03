@@ -49,10 +49,10 @@ namespace Gestionare_Bunuri_Back.Controllers
         [HttpPatch("{id}")]
         public async Task<IActionResult> PatchAsset(int id, [FromBody] AssetUpdateDto dto)
         {
-            var result = await _assetService.PatchAssetAsync(id, dto);
-            if (result == null)
+            var updated = await _assetService.PatchAssetAsync(id, dto);
+            if (!updated)
                 return NotFound();
-            return Ok(result);
+            return NoContent();
         }
     }
 }
