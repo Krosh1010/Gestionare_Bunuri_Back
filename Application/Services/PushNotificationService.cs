@@ -2,7 +2,7 @@ using Application.Abstraction;
 using FirebaseAdmin.Messaging;
 using Microsoft.Extensions.Logging;
 
-namespace Gestionare_Bunuri_Back.Services
+namespace Application.Services
 {
     public class PushNotificationService : IPushNotificationService
     {

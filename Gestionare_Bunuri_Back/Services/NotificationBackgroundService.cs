@@ -11,9 +11,9 @@ using Microsoft.Extensions.Logging;
 namespace Gestionare_Bunuri_Back.Services
 {
     /// <summary>
-    /// Background service care rulează periodic (la fiecare 15 minute),
+    /// Background service care rulează periodic (la fiecare 2 minute),
     /// generează notificări pentru toți utilizatorii și trimite push notifications
-    /// pe dispozitivele mobile, chiar dacă aplicația este închisă sau pe background.
+    /// pe dispozitivele mobile și email-uri, chiar dacă aplicația este închisă sau pe background.
     /// </summary>
     public class NotificationBackgroundService : BackgroundService
     {
@@ -62,27 +62,26 @@ namespace Gestionare_Bunuri_Back.Services
             var notificationRepository = scope.ServiceProvider.GetRequiredService<INotificationRepository>();
             var deviceTokenRepository = scope.ServiceProvider.GetRequiredService<IDeviceTokenRepository>();
             var pushNotificationService = scope.ServiceProvider.GetRequiredService<IPushNotificationService>();
+            var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+            var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
 
             _logger.LogInformation("Începem procesarea notificărilor background...");
 
-            // 1. Obținem toți utilizatorii care au dispozitive înregistrate
-            var userIdsWithTokens = await deviceTokenRepository.GetAllUserIdsWithTokensAsync();
+            // 1. Obținem toți utilizatorii care sunt proprietari de spații (pot avea notificări)
+            var allOwnerUserIds = await notificationRepository.GetAllOwnerUserIdsAsync();
 
-            if (!userIdsWithTokens.Any())
+            if (!allOwnerUserIds.Any())
             {
-                _logger.LogInformation("Nu există utilizatori cu device tokens înregistrate.");
+                _logger.LogInformation("Nu există utilizatori proprietari de spații.");
                 return;
             }
 
-            // 2. Includem și utilizatorii care sunt proprietari de spații (pot avea notificări)
-            var allOwnerUserIds = await notificationRepository.GetAllOwnerUserIdsAsync();
+            // 2. Obținem utilizatorii cu device tokens pentru push
+            var userIdsWithTokens = await deviceTokenRepository.GetAllUserIdsWithTokensAsync();
 
-            // Luăm doar utilizatorii care au ȘI device tokens ȘI sunt proprietari
-            var userIdsToProcess = userIdsWithTokens.Intersect(allOwnerUserIds).ToList();
+            _logger.LogInformation("Procesăm notificări pentru {Count} utilizatori proprietari.", allOwnerUserIds.Count);
 
-            _logger.LogInformation("Procesăm notificări pentru {Count} utilizatori.", userIdsToProcess.Count);
-
-            foreach (var userId in userIdsToProcess)
+            foreach (var userId in allOwnerUserIds)
             {
                 if (stoppingToken.IsCancellationRequested) break;
 
@@ -92,7 +91,10 @@ namespace Gestionare_Bunuri_Back.Services
                         userId,
                         notificationRepository,
                         deviceTokenRepository,
-                        pushNotificationService);
+                        pushNotificationService,
+                        emailService,
+                        userRepository,
+                        userIdsWithTokens.Contains(userId));
                 }
                 catch (Exception ex)
                 {
@@ -107,26 +109,37 @@ namespace Gestionare_Bunuri_Back.Services
             int userId,
             INotificationRepository notificationRepository,
             IDeviceTokenRepository deviceTokenRepository,
-            IPushNotificationService pushNotificationService)
+            IPushNotificationService pushNotificationService,
+            IEmailService emailService,
+            IUserRepository userRepository,
+            bool hasDeviceTokens)
         {
             // 1. Generăm notificările (aceeași logică ca la GET /api/notifications)
             await notificationRepository.GenerateExpiringNotificationsAsync(userId);
 
-            // 2. Obținem notificările care nu au fost trimise ca push
+            // 2. Trimitem push notifications (doar dacă are device tokens)
+            if (hasDeviceTokens)
+            {
+                await SendPushNotificationsForUser(userId, notificationRepository, deviceTokenRepository, pushNotificationService);
+            }
+
+            // 3. Trimitem email notifications
+            await SendEmailNotificationsForUser(userId, notificationRepository, emailService, userRepository);
+        }
+
+        private async Task SendPushNotificationsForUser(
+            int userId,
+            INotificationRepository notificationRepository,
+            IDeviceTokenRepository deviceTokenRepository,
+            IPushNotificationService pushNotificationService)
+        {
             var unsentNotifications = await notificationRepository.GetUnsentPushNotificationsAsync(userId);
 
-            if (!unsentNotifications.Any())
-            {
-                return;
-            }
+            if (!unsentNotifications.Any()) return;
 
-            // 3. Obținem device tokens pentru acest user
             var deviceTokens = await deviceTokenRepository.GetTokensByUserIdAsync(userId);
 
-            if (!deviceTokens.Any())
-            {
-                return;
-            }
+            if (!deviceTokens.Any()) return;
 
             _logger.LogInformation(
                 "Trimitem {NotifCount} notificări push către {TokenCount} dispozitive pentru userId: {UserId}",
@@ -136,10 +149,7 @@ namespace Gestionare_Bunuri_Back.Services
 
             foreach (var notification in unsentNotifications)
             {
-                string title = notification.Type == NotificationType.WARRANTY_EXP
-                    ? "Garanție"
-                    : "Asigurare";
-
+                string title = GetNotificationTitle(notification);
                 string body = notification.Message;
 
                 foreach (var deviceToken in deviceTokens)
@@ -153,7 +163,6 @@ namespace Gestionare_Bunuri_Back.Services
                         ex.MessagingErrorCode == MessagingErrorCode.Unregistered ||
                         ex.MessagingErrorCode == MessagingErrorCode.InvalidArgument)
                     {
-                        // Tokenul este invalid/expirat, îl ștergem
                         _logger.LogWarning("Ștergem token invalid: {Token}", deviceToken.Token);
                         await deviceTokenRepository.RemoveInvalidTokenAsync(deviceToken.Token);
                     }
@@ -168,7 +177,6 @@ namespace Gestionare_Bunuri_Back.Services
                 sentNotificationIds.Add(notification.Id);
             }
 
-            // 4. Marcăm notificările ca trimise (push sent)
             if (sentNotificationIds.Any())
             {
                 await notificationRepository.MarkNotificationsAsPushSentAsync(sentNotificationIds);
@@ -176,6 +184,63 @@ namespace Gestionare_Bunuri_Back.Services
                     "Marcate {Count} notificări ca push-sent pentru userId: {UserId}",
                     sentNotificationIds.Count, userId);
             }
+        }
+
+        private async Task SendEmailNotificationsForUser(
+            int userId,
+            INotificationRepository notificationRepository,
+            IEmailService emailService,
+            IUserRepository userRepository)
+        {
+            var unsentEmailNotifications = await notificationRepository.GetUnsentEmailNotificationsAsync(userId);
+
+            if (!unsentEmailNotifications.Any()) return;
+
+            // Obținem datele utilizatorului (email + nume)
+            var userInfo = await userRepository.GetUserByIdAsync(userId);
+            if (userInfo == null) return;
+
+            _logger.LogInformation(
+                "Trimitem {Count} notificări pe email către {Email} pentru userId: {UserId}",
+                unsentEmailNotifications.Count, userInfo.Email, userId);
+
+            try
+            {
+                // Construim lista de items pentru email
+                var emailItems = unsentEmailNotifications.Select(n => new NotificationEmailItem
+                {
+                    Title = GetNotificationTitle(n),
+                    Message = n.Message,
+                    IsExpired = n.IsExpired
+                }).ToList();
+
+                // Trimitem un singur email cu toate notificările
+                await emailService.SendNotificationEmailAsync(userInfo.Email, userInfo.FullName, emailItems);
+
+                // Marcăm toate notificările ca trimise pe email
+                var sentIds = unsentEmailNotifications.Select(n => n.Id).ToList();
+                await notificationRepository.MarkNotificationsAsEmailSentAsync(sentIds);
+
+                _logger.LogInformation(
+                    "Marcate {Count} notificări ca email-sent pentru userId: {UserId}",
+                    sentIds.Count, userId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Eroare la trimiterea email-ului cu notificări pentru userId: {UserId}", userId);
+            }
+        }
+
+        private static string GetNotificationTitle(NotificationTable notification)
+        {
+            return notification.Type switch
+            {
+                NotificationType.WARRANTY_EXP => "Garanție",
+                NotificationType.INSURANCE_EXP => "Asigurare",
+                NotificationType.CUSTOM_TRACKER_EXP => notification.CustomTracker?.Name ?? "Tracker",
+                _ => "Notificare"
+            };
         }
     }
 }

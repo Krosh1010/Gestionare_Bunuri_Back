@@ -27,5 +27,11 @@ namespace Domain.Dashboard
         public int ExpiringSoonInsurance { get; set; }
         public int ActiveInsurance { get; set; }
 
+        // Custom Tracker summary
+        public int TotalCustomTracker { get; set; }
+        public int ExpiredCustomTracker { get; set; }
+        public int ExpiringSoonCustomTracker { get; set; }
+        public int ActiveCustomTracker { get; set; }
+
     }
 }

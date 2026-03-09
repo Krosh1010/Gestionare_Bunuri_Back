@@ -21,6 +21,17 @@ namespace Domain.DbTables
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        /// <summary>
+        /// Token pentru resetarea parolei
+        /// </summary>
+        [MaxLength(6)]
+        public string? PasswordResetToken { get; set; }
+
+        /// <summary>
+        /// Data expirării token-ului de resetare
+        /// </summary>
+        public DateTime? PasswordResetTokenExpiry { get; set; }
+
         public ICollection<SpaceUserTable> SpaceUsers { get; set; } = new List<SpaceUserTable>();
         public ICollection<NotificationTable> Notifications { get; set; } = new List<NotificationTable>();
         public ICollection<DeviceTokenTable> DeviceTokens { get; set; } = new List<DeviceTokenTable>();

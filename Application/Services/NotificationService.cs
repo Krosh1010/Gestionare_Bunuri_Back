@@ -44,6 +44,16 @@ namespace Application.Services
         {
             await _notificationRepository.MarkNotificationsAsPushSentAsync(notificationIds);
         }
+
+        public async Task<List<NotificationTable>> GetUnsentEmailNotificationsAsync(int userId)
+        {
+            return await _notificationRepository.GetUnsentEmailNotificationsAsync(userId);
+        }
+
+        public async Task MarkNotificationsAsEmailSentAsync(List<int> notificationIds)
+        {
+            await _notificationRepository.MarkNotificationsAsEmailSentAsync(notificationIds);
+        }
     }
 }
 

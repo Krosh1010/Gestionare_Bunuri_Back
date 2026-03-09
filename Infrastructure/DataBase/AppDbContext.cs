@@ -162,6 +162,13 @@ namespace Infrastructure.DataBase
                 .HasForeignKey(ct => ct.AssetId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Notification -> CustomTracker (opțional, NoAction pentru a evita cascade paths multiple)
+            modelBuilder.Entity<NotificationTable>()
+                .HasOne(n => n.CustomTracker)
+                .WithMany()
+                .HasForeignKey(n => n.CustomTrackerId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             // DeviceToken -> User (Cascade)
             modelBuilder.Entity<DeviceTokenTable>()
                 .HasOne(dt => dt.User)

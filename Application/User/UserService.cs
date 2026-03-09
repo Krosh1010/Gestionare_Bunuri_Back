@@ -15,12 +15,14 @@ namespace Application.User
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _config;
         private readonly Hash _hash;
+        private readonly IEmailService _emailService;
 
-        public UserService(IUserRepository userRepository, IConfiguration config, Hash hash)
+        public UserService(IUserRepository userRepository, IConfiguration config, Hash hash, IEmailService emailService)
         {
             _userRepository = userRepository;
             _config = config;
             _hash = hash;
+            _emailService = emailService;
         }
 
         public async Task<string?> LoginAsync(UserLoginDto dto)
@@ -64,6 +66,30 @@ namespace Application.User
             var newHash = _hash.Generate(dto.NewPassword);
             await _userRepository.UpdatePasswordAsync(user, newHash);
             return true;
+        }
+
+        public async Task<bool> ForgotPasswordAsync(string email)
+        {
+            var user = await _userRepository.GetUserByEmailAsync(email);
+            if (user == null) return false;
+
+            // Generăm un cod de 6 cifre
+            var random = new Random();
+            var resetToken = random.Next(100000, 999999).ToString();
+            var expiry = DateTime.UtcNow.AddMinutes(15);
+
+            await _userRepository.SetPasswordResetTokenAsync(user, resetToken, expiry);
+
+            // Trimitem email-ul cu codul de resetare
+            await _emailService.SendPasswordResetEmailAsync(user.Email, user.FullName, resetToken);
+
+            return true;
+        }
+
+        public async Task<bool> ResetPasswordAsync(ResetPasswordDto dto)
+        {
+            var newHash = _hash.Generate(dto.NewPassword);
+            return await _userRepository.ResetPasswordWithTokenAsync(dto.Email, dto.Token, newHash);
         }
 
         private string GenerateJwtToken(UserTable user)

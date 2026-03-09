@@ -9,4 +9,6 @@ public interface INotificationService
     Task<List<int>> GetAllOwnerUserIdsAsync();
     Task<List<NotificationTable>> GetUnsentPushNotificationsAsync(int userId);
     Task MarkNotificationsAsPushSentAsync(List<int> notificationIds);
+    Task<List<NotificationTable>> GetUnsentEmailNotificationsAsync(int userId);
+    Task MarkNotificationsAsEmailSentAsync(List<int> notificationIds);
 }

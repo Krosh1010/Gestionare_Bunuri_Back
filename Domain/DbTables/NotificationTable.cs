@@ -6,7 +6,8 @@ namespace Domain.DbTables
     public enum NotificationType
     {
         WARRANTY_EXP,
-        INSURANCE_EXP
+        INSURANCE_EXP,
+        CUSTOM_TRACKER_EXP
     }
 
     public class NotificationTable
@@ -22,6 +23,10 @@ namespace Domain.DbTables
         [Required]
         public int AssetId { get; set; }
         public AssetTable Asset { get; set; } = null!;
+
+        // Opțional: referință la custom tracker (doar pentru CUSTOM_TRACKER_EXP)
+        public int? CustomTrackerId { get; set; }
+        public CustomTrackerTable? CustomTracker { get; set; }
 
         [Required]
         public NotificationType Type { get; set; }
@@ -43,5 +48,10 @@ namespace Domain.DbTables
         /// true dacă notificarea push a fost deja trimisă pe dispozitiv
         /// </summary>
         public bool IsPushSent { get; set; } = false;
+
+        /// <summary>
+        /// true dacă notificarea a fost deja trimisă pe email
+        /// </summary>
+        public bool IsEmailSent { get; set; } = false;
     }
 }

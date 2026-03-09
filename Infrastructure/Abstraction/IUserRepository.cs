@@ -12,5 +12,7 @@ namespace Infrastructure.Abstraction
         Task<UserReadDto?> PatchUserDataAsync(int userId, UserUpdateDataDto dto);
         Task<UserTable?> GetUserEntityByIdAsync(int userId);
         Task UpdatePasswordAsync(UserTable user, string newPasswordHash);
+        Task SetPasswordResetTokenAsync(UserTable user, string token, DateTime expiry);
+        Task<bool> ResetPasswordWithTokenAsync(string email, string token, string newPasswordHash);
     }
 }

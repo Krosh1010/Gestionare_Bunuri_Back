@@ -30,6 +30,12 @@ namespace Domain.AssetDto
         public DateTime? InsuranceStartDate { get; set; }
         public string? WarrantyProvider { get; set; }
         public DateTime? WarrantyStartDate { get; set; }
+        public int? WarrantyDocumentId { get; set; }
+        public string? WarrantyDocumentFileName { get; set; }
+
+        public int? InsuranceDocumentId { get; set; }
+        public string? InsuranceDocumentFileName { get; set; }
+
         // CustomTracker info
         public string? CustomTrackerName { get; set; }
         public DateTime? CustomTrackerEndDate { get; set; }

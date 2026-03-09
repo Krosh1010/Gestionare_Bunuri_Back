@@ -1,5 +1,6 @@
 
 using Domain.AssetDto;
+using Domain.DbTables;
 using Infrastructure.Abstraction;
 using Infrastructure.DataBase;
 using Microsoft.EntityFrameworkCore;
@@ -143,6 +144,7 @@ namespace Infrastructure.Asset
                 .Include(a => a.Warranty)
                 .Include(a => a.Insurance)
                 .Include(a => a.CustomTrackers)
+                .Include(a => a.Documents)
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (asset == null)
@@ -153,6 +155,9 @@ namespace Infrastructure.Asset
             var latestTracker = asset.CustomTrackers?
                 .OrderByDescending(ct => ct.CreatedAt)
                 .FirstOrDefault();
+
+            var warrantyDoc = asset.Documents?.FirstOrDefault(d => d.Type == DocumentType.WARRANTY);
+            var insuranceDoc = asset.Documents?.FirstOrDefault(d => d.Type == DocumentType.INSURANCE);
 
             return new AssetReadDto
             {
@@ -169,11 +174,15 @@ namespace Infrastructure.Asset
                 WarrantyStatus = asset.Warranty?.Status,
                 WarrantyProvider = asset.Warranty?.Provider,
                 WarrantyStartDate = asset.Warranty?.StartDate,
+                WarrantyDocumentId = warrantyDoc?.Id,
+                WarrantyDocumentFileName = warrantyDoc?.FileName,
                 InsuranceEndDate = asset.Insurance?.EndDate,
                 InsuranceStatus = asset.Insurance?.Status,
                 InsuranceValue = asset.Insurance?.InsuredValue,
                 InsuranceCompany = asset.Insurance?.Company,
                 InsuranceStartDate = asset.Insurance?.StartDate,
+                InsuranceDocumentId = insuranceDoc?.Id,
+                InsuranceDocumentFileName = insuranceDoc?.FileName,
                 CustomTrackerName = latestTracker?.Name,
                 CustomTrackerEndDate = latestTracker?.EndDate,
                 CustomTrackerStatus = latestTracker?.Status

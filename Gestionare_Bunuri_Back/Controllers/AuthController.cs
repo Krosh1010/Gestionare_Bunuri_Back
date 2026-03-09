@@ -43,5 +43,26 @@ namespace Gestionare_Bunuri_Back.Controllers
                 return StatusCode(500, new { message = ex.Message, stack = ex.StackTrace });
             }
         }
+
+        [AllowAnonymous]
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            var result = await _userService.ForgotPasswordAsync(dto.Email);
+
+            // Întoarcem mereu OK pentru a nu dezvălui dacă email-ul există în sistem
+            return Ok(new { message = "Dacă email-ul există în sistem, vei primi un cod de resetare." });
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            var result = await _userService.ResetPasswordAsync(dto);
+            if (!result)
+                return BadRequest(new { message = "Codul de resetare este invalid sau a expirat." });
+
+            return Ok(new { message = "Parola a fost resetată cu succes." });
+        }
     }
 }

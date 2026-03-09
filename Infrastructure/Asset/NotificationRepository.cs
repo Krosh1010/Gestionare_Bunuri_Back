@@ -42,6 +42,7 @@ namespace Infrastructure.Asset
             var assets = await _context.Assets
                 .Include(a => a.Warranty)
                 .Include(a => a.Insurance)
+                .Include(a => a.CustomTrackers)
                 .Include(a => a.Space)
                 .Where(a => a.Space.OwnerId == userId)
                 .ToListAsync();
@@ -305,6 +306,148 @@ namespace Infrastructure.Asset
                         }
                     }
                 }
+
+                // Notificări pentru custom trackers (fiecare tracker individual)
+                if (asset.CustomTrackers != null && asset.CustomTrackers.Any())
+                {
+                    foreach (var tracker in asset.CustomTrackers)
+                    {
+                        if (tracker.EndDate < now)
+                        {
+                            // Tracker-ul a expirat
+                            bool dismissed = await _context.Notifications.AnyAsync(n =>
+                                n.AssetId == asset.Id &&
+                                n.UserId == userId &&
+                                n.Type == NotificationType.CUSTOM_TRACKER_EXP &&
+                                n.CustomTrackerId == tracker.Id &&
+                                n.ExpiryDate == tracker.EndDate &&
+                                n.IsExpired &&
+                                n.IsRead);
+
+                            bool existsUnread = await _context.Notifications.AnyAsync(n =>
+                                n.AssetId == asset.Id &&
+                                n.UserId == userId &&
+                                n.Type == NotificationType.CUSTOM_TRACKER_EXP &&
+                                n.CustomTrackerId == tracker.Id &&
+                                n.ExpiryDate == tracker.EndDate &&
+                                n.IsExpired &&
+                                !n.IsRead);
+
+                            // Șterge notificările "expiră curând" necitite (au trecut în "a expirat")
+                            var oldExpiringTrackerNotifs = await _context.Notifications
+                                .Where(n => n.AssetId == asset.Id &&
+                                            n.UserId == userId &&
+                                            n.Type == NotificationType.CUSTOM_TRACKER_EXP &&
+                                            n.CustomTrackerId == tracker.Id &&
+                                            !n.IsExpired &&
+                                            !n.IsRead)
+                                .ToListAsync();
+
+                            if (oldExpiringTrackerNotifs.Any())
+                            {
+                                _context.Notifications.RemoveRange(oldExpiringTrackerNotifs);
+                            }
+
+                            if (!existsUnread && !dismissed)
+                            {
+                                _context.Notifications.Add(new NotificationTable
+                                {
+                                    UserId = userId,
+                                    AssetId = asset.Id,
+                                    CustomTrackerId = tracker.Id,
+                                    Type = NotificationType.CUSTOM_TRACKER_EXP,
+                                    Message = $"'{tracker.Name}' pentru '{asset.Name}' a expirat.",
+                                    CreatedAt = now,
+                                    ExpiryDate = tracker.EndDate,
+                                    IsExpired = true
+                                });
+                            }
+                        }
+                        else if (tracker.EndDate <= threshold)
+                        {
+                            // Tracker-ul expiră curând (în mai puțin de 30 zile)
+                            bool dismissed = await _context.Notifications.AnyAsync(n =>
+                                n.AssetId == asset.Id &&
+                                n.UserId == userId &&
+                                n.Type == NotificationType.CUSTOM_TRACKER_EXP &&
+                                n.CustomTrackerId == tracker.Id &&
+                                n.ExpiryDate == tracker.EndDate &&
+                                !n.IsExpired &&
+                                n.IsRead);
+
+                            bool existsUnread = await _context.Notifications.AnyAsync(n =>
+                                n.AssetId == asset.Id &&
+                                n.UserId == userId &&
+                                n.Type == NotificationType.CUSTOM_TRACKER_EXP &&
+                                n.CustomTrackerId == tracker.Id &&
+                                n.ExpiryDate == tracker.EndDate &&
+                                !n.IsExpired &&
+                                !n.IsRead);
+
+                            // Șterge notificările "a expirat" necitite
+                            var oldExpiredTrackerNotifs = await _context.Notifications
+                                .Where(n => n.AssetId == asset.Id &&
+                                            n.UserId == userId &&
+                                            n.Type == NotificationType.CUSTOM_TRACKER_EXP &&
+                                            n.CustomTrackerId == tracker.Id &&
+                                            n.IsExpired &&
+                                            !n.IsRead)
+                                .ToListAsync();
+
+                            if (oldExpiredTrackerNotifs.Any())
+                            {
+                                _context.Notifications.RemoveRange(oldExpiredTrackerNotifs);
+                            }
+
+                            // Șterge notificările "expiră curând" necitite cu altă dată de expirare
+                            var oldExpiringTrackerNotifs = await _context.Notifications
+                                .Where(n => n.AssetId == asset.Id &&
+                                            n.UserId == userId &&
+                                            n.Type == NotificationType.CUSTOM_TRACKER_EXP &&
+                                            n.CustomTrackerId == tracker.Id &&
+                                            !n.IsExpired &&
+                                            n.ExpiryDate != tracker.EndDate &&
+                                            !n.IsRead)
+                                .ToListAsync();
+
+                            if (oldExpiringTrackerNotifs.Any())
+                            {
+                                _context.Notifications.RemoveRange(oldExpiringTrackerNotifs);
+                            }
+
+                            if (!existsUnread && !dismissed)
+                            {
+                                _context.Notifications.Add(new NotificationTable
+                                {
+                                    UserId = userId,
+                                    AssetId = asset.Id,
+                                    CustomTrackerId = tracker.Id,
+                                    Type = NotificationType.CUSTOM_TRACKER_EXP,
+                                    Message = $"'{tracker.Name}' pentru '{asset.Name}' expiră curând.",
+                                    CreatedAt = now,
+                                    ExpiryDate = tracker.EndDate,
+                                    IsExpired = false
+                                });
+                            }
+                        }
+                        else if (tracker.EndDate > threshold)
+                        {
+                            // Tracker-ul nu e în pericol, șterge notificările necitite
+                            var oldTrackerNotifications = await _context.Notifications
+                                .Where(n => n.AssetId == asset.Id &&
+                                            n.UserId == userId &&
+                                            n.Type == NotificationType.CUSTOM_TRACKER_EXP &&
+                                            n.CustomTrackerId == tracker.Id &&
+                                            !n.IsRead)
+                                .ToListAsync();
+
+                            if (oldTrackerNotifications.Any())
+                            {
+                                _context.Notifications.RemoveRange(oldTrackerNotifications);
+                            }
+                        }
+                    }
+                }
             }
 
             await _context.SaveChangesAsync();
@@ -314,6 +457,7 @@ namespace Infrastructure.Asset
         {
             var notifications = await _context.Notifications
                 .Include(n => n.Asset)
+                .Include(n => n.CustomTracker)
                 .Where(n => n.UserId == userId && !n.IsRead) // Doar notificările necitite
                 .ToListAsync();
 
@@ -333,10 +477,14 @@ namespace Infrastructure.Asset
                 {
                     Id = x.Notification.Id,
                     Type = x.Notification.Type,
-                    Message = (x.Notification.Type == NotificationType.WARRANTY_EXP || x.Notification.Type == NotificationType.INSURANCE_EXP) && x.Notification.ExpiryDate.HasValue
-                        ? (!x.Notification.IsExpired 
-                            ? $"{(x.Notification.Type == NotificationType.WARRANTY_EXP ? "Garanția" : "Asigurarea")} pentru '{x.Notification.Asset.Name}' expiră în {x.DaysLeft} zile."
-                            : $"{(x.Notification.Type == NotificationType.WARRANTY_EXP ? "Garanția" : "Asigurarea")} pentru '{x.Notification.Asset.Name}' a expirat.")
+                    Message = x.Notification.ExpiryDate.HasValue
+                        ? (!x.Notification.IsExpired
+                            ? (x.Notification.Type == NotificationType.CUSTOM_TRACKER_EXP
+                                ? $"'{x.Notification.CustomTracker?.Name ?? "Tracker"}' pentru '{x.Notification.Asset.Name}' expiră în {x.DaysLeft} zile."
+                                : $"{(x.Notification.Type == NotificationType.WARRANTY_EXP ? "Garanția" : "Asigurarea")} pentru '{x.Notification.Asset.Name}' expiră în {x.DaysLeft} zile.")
+                            : (x.Notification.Type == NotificationType.CUSTOM_TRACKER_EXP
+                                ? $"'{x.Notification.CustomTracker?.Name ?? "Tracker"}' pentru '{x.Notification.Asset.Name}' a expirat."
+                                : $"{(x.Notification.Type == NotificationType.WARRANTY_EXP ? "Garanția" : "Asigurarea")} pentru '{x.Notification.Asset.Name}' a expirat."))
                         : x.Notification.Message,
                     IsRead = x.Notification.IsRead,
                     CreatedAt = x.Notification.CreatedAt
@@ -377,6 +525,7 @@ namespace Infrastructure.Asset
         {
             return await _context.Notifications
                 .Include(n => n.Asset)
+                .Include(n => n.CustomTracker)
                 .Where(n => n.UserId == userId && !n.IsRead && !n.IsPushSent)
                 .ToListAsync();
         }
@@ -392,6 +541,31 @@ namespace Infrastructure.Asset
             foreach (var notification in notifications)
             {
                 notification.IsPushSent = true;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<NotificationTable>> GetUnsentEmailNotificationsAsync(int userId)
+        {
+            return await _context.Notifications
+                .Include(n => n.Asset)
+                .Include(n => n.CustomTracker)
+                .Where(n => n.UserId == userId && !n.IsRead && !n.IsEmailSent)
+                .ToListAsync();
+        }
+
+        public async Task MarkNotificationsAsEmailSentAsync(List<int> notificationIds)
+        {
+            if (!notificationIds.Any()) return;
+
+            var notifications = await _context.Notifications
+                .Where(n => notificationIds.Contains(n.Id))
+                .ToListAsync();
+
+            foreach (var notification in notifications)
+            {
+                notification.IsEmailSent = true;
             }
 
             await _context.SaveChangesAsync();

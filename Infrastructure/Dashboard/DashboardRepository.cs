@@ -23,6 +23,7 @@ namespace Infrastructure.Dashboard
             var assets = await _context.Assets
                 .Include(a => a.Warranty)
                 .Include(a => a.Insurance)
+                .Include(a => a.CustomTrackers)
                 .Include(a => a.Space)
                 .Where(a => a.Space.OwnerId == userId)
                 .ToListAsync();
@@ -48,6 +49,13 @@ namespace Infrastructure.Dashboard
             int expiringSoonInsurance = insurances.Count(i => i.EndDate >= now && i.EndDate <= oneMonthLater);
             int activeInsurance = insurances.Count(i => i.EndDate > oneMonthLater);
 
+            // Custom Trackers
+            var customTrackers = assets.SelectMany(a => a.CustomTrackers).ToList();
+            int totalCustomTracker = customTrackers.Count;
+            int expiredCustomTracker = customTrackers.Count(ct => ct.EndDate < now);
+            int expiringSoonCustomTracker = customTrackers.Count(ct => ct.EndDate >= now && ct.EndDate <= oneMonthLater);
+            int activeCustomTracker = customTrackers.Count(ct => ct.EndDate > oneMonthLater);
+
             return new DashboardAssetSummaryDto
             {
                 TotalCount = total,
@@ -68,6 +76,12 @@ namespace Infrastructure.Dashboard
                 ExpiredInsurance = expiredInsurance,
                 ExpiringSoonInsurance = expiringSoonInsurance,
                 ActiveInsurance = activeInsurance,
+
+                // Custom Tracker
+                TotalCustomTracker = totalCustomTracker,
+                ExpiredCustomTracker = expiredCustomTracker,
+                ExpiringSoonCustomTracker = expiringSoonCustomTracker,
+                ActiveCustomTracker = activeCustomTracker,
             };
         }
     }

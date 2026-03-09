@@ -64,6 +64,9 @@ builder.Services.AddScoped<IDocumentService, DocumentService>();
 // Push Notification service
 builder.Services.AddScoped<IPushNotificationService, PushNotificationService>();
 
+// Email service
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 // Background service pentru notificări push
 builder.Services.AddHostedService<NotificationBackgroundService>();
 

@@ -80,5 +80,29 @@ namespace Infrastructure.User
             user.PasswordHash = newPasswordHash;
             await _context.SaveChangesAsync();
         }
+
+        public async Task SetPasswordResetTokenAsync(UserTable user, string token, DateTime expiry)
+        {
+            user.PasswordResetToken = token;
+            user.PasswordResetTokenExpiry = expiry;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> ResetPasswordWithTokenAsync(string email, string token, string newPasswordHash)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u =>
+                u.Email == email &&
+                u.PasswordResetToken == token &&
+                u.PasswordResetTokenExpiry.HasValue &&
+                u.PasswordResetTokenExpiry.Value > DateTime.UtcNow);
+
+            if (user == null) return false;
+
+            user.PasswordHash = newPasswordHash;
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpiry = null;
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

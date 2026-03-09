@@ -9,5 +9,7 @@ namespace Application.Abstraction
         Task<UserReadDto?> GetUserInfoAsync(int userId);
         Task<UserReadDto?> PatchUserDataAsync(int userId, UserUpdateDataDto dto);
         Task<bool> ChangePasswordAsync(int userId, UserChangePasswordDto dto);
+        Task<bool> ForgotPasswordAsync(string email);
+        Task<bool> ResetPasswordAsync(ResetPasswordDto dto);
     }
 }
