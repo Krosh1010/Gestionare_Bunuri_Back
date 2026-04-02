@@ -40,5 +40,15 @@ namespace Domain.AssetDto
         public string? CustomTrackerName { get; set; }
         public DateTime? CustomTrackerEndDate { get; set; }
         public CustomTrackerStatus? CustomTrackerStatus { get; set; }
+
+        // Loan info
+        public bool IsLoaned { get; set; }
+        public int? LoanId { get; set; }
+        public string? LoanedToName { get; set; }
+        public string? LoanCondition { get; set; }
+        public string? LoanNotes { get; set; }
+        public DateTime? LoanedAt { get; set; }
+        public DateTime? LoanReturnedAt { get; set; }
+        public string? LoanConditionOnReturn { get; set; }
     }
 }

@@ -57,6 +57,10 @@ builder.Services.AddScoped<ICustomTrackerService, CustomTrackerService>();
 builder.Services.AddScoped<IDeviceTokenRepository, DeviceTokenRepository>();
 builder.Services.AddScoped<IDeviceTokenService, DeviceTokenService>();
 
+// Loan services
+builder.Services.AddScoped<ILoanRepository, LoanRepository>();
+builder.Services.AddScoped<ILoanService, LoanService>();
+
 // Document services
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();

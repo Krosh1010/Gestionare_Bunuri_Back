@@ -33,5 +33,6 @@ namespace Domain.DbTables
         public ICollection<NotificationTable> Notifications { get; set; } = new List<NotificationTable>();
         public ICollection<InsuranceSuggestionTable> InsuranceSuggestions { get; set; } = new List<InsuranceSuggestionTable>();
         public ICollection<CustomTrackerTable> CustomTrackers { get; set; } = new List<CustomTrackerTable>();
+        public ICollection<LoanTable> Loans { get; set; } = new List<LoanTable>();
     }
 }

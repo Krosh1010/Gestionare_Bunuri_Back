@@ -10,17 +10,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Gestionare_Bunuri_Back.Services
 {
-    /// <summary>
-    /// Background service care rulează periodic (la fiecare 2 minute),
-    /// generează notificări pentru toți utilizatorii și trimite push notifications
-    /// pe dispozitivele mobile și email-uri, chiar dacă aplicația este închisă sau pe background.
-    /// </summary>
+
     public class NotificationBackgroundService : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<NotificationBackgroundService> _logger;
 
-        // Interval de verificare: la fiecare 2 minute (pentru testare)
+        // Interval de verificare: la fiecare 2 minute 
         private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(2);
 
         public NotificationBackgroundService(

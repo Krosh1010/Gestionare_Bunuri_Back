@@ -22,5 +22,7 @@ namespace Domain.AssetDto
         public string? CustomTrackerName { get; set; }
         public DateTime? CustomTrackerEndDate { get; set; }
         public CustomTrackerStatus? CustomTrackerStatus { get; set; }
+
+        public bool IsLoaned { get; set; }
     }
 }

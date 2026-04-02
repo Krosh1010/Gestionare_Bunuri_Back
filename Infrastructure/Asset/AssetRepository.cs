@@ -58,6 +58,7 @@ namespace Infrastructure.Asset
                 .Include(asset => asset.Space)
                 .Include(asset => asset.Warranty)
                 .Include(asset => asset.Insurance)
+                .Include(asset => asset.Loans)
                 .Where(asset => asset.Space.OwnerId == userId);
 
             // Filtrare după nume (conține, case-insensitive)
@@ -123,7 +124,8 @@ namespace Infrastructure.Asset
                     InsuranceStatus = asset.Insurance?.Status,
                     CustomTrackerName = latestTracker?.Name,
                     CustomTrackerEndDate = latestTracker?.EndDate,
-                    CustomTrackerStatus = latestTracker?.Status
+                    CustomTrackerStatus = latestTracker?.Status,
+                    IsLoaned = asset.Loans.Any(l => l.ReturnedAt == null)
                 };
             }).ToList();
 
@@ -145,6 +147,7 @@ namespace Infrastructure.Asset
                 .Include(a => a.Insurance)
                 .Include(a => a.CustomTrackers)
                 .Include(a => a.Documents)
+                .Include(a => a.Loans)
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (asset == null)
@@ -185,7 +188,15 @@ namespace Infrastructure.Asset
                 InsuranceDocumentFileName = insuranceDoc?.FileName,
                 CustomTrackerName = latestTracker?.Name,
                 CustomTrackerEndDate = latestTracker?.EndDate,
-                CustomTrackerStatus = latestTracker?.Status
+                CustomTrackerStatus = latestTracker?.Status,
+                IsLoaned = asset.Loans.Any(l => l.ReturnedAt == null),
+                LoanId = asset.Loans.FirstOrDefault(l => l.ReturnedAt == null)?.Id,
+                LoanedToName = asset.Loans.FirstOrDefault(l => l.ReturnedAt == null)?.LoanedToName,
+                LoanCondition = asset.Loans.FirstOrDefault(l => l.ReturnedAt == null)?.Condition,
+                LoanNotes = asset.Loans.FirstOrDefault(l => l.ReturnedAt == null)?.Notes,
+                LoanedAt = asset.Loans.FirstOrDefault(l => l.ReturnedAt == null)?.LoanedAt,
+                LoanReturnedAt = asset.Loans.FirstOrDefault(l => l.ReturnedAt == null)?.ReturnedAt,
+                LoanConditionOnReturn = asset.Loans.FirstOrDefault(l => l.ReturnedAt == null)?.ConditionOnReturn
             };
         }
 

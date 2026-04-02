@@ -20,6 +20,7 @@ namespace Infrastructure.DataBase
         public DbSet<InsuranceSuggestionTable> InsuranceSuggestions => Set<InsuranceSuggestionTable>();
         public DbSet<CustomTrackerTable> CustomTrackers => Set<CustomTrackerTable>();
         public DbSet<DeviceTokenTable> DeviceTokens => Set<DeviceTokenTable>();
+        public DbSet<LoanTable> Loans => Set<LoanTable>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -180,6 +181,13 @@ namespace Infrastructure.DataBase
             modelBuilder.Entity<DeviceTokenTable>()
                 .HasIndex(dt => dt.Token)
                 .IsUnique();
+
+            // Loan -> Asset (Cascade)
+            modelBuilder.Entity<LoanTable>()
+                .HasOne(l => l.Asset)
+                .WithMany(a => a.Loans)
+                .HasForeignKey(l => l.AssetId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
