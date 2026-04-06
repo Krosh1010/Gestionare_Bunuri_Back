@@ -32,7 +32,8 @@ namespace Infrastructure.User
                 Email = email,
                 PasswordHash = passwordHash,
                 FullName = fullName,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                IsEmailVerified = false
             };
 
             _context.Users.Add(user);
@@ -103,6 +104,30 @@ namespace Infrastructure.User
             user.PasswordResetTokenExpiry = null;
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task SetEmailVerificationTokenAsync(UserTable user, string token, DateTime expiry)
+        {
+            user.EmailVerificationToken = token;
+            user.EmailVerificationTokenExpiry = expiry;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<UserTable?> VerifyEmailAsync(string email, string token)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u =>
+                u.Email == email &&
+                u.EmailVerificationToken == token &&
+                u.EmailVerificationTokenExpiry.HasValue &&
+                u.EmailVerificationTokenExpiry.Value > DateTime.UtcNow);
+
+            if (user == null) return null;
+
+            user.IsEmailVerified = true;
+            user.EmailVerificationToken = null;
+            user.EmailVerificationTokenExpiry = null;
+            await _context.SaveChangesAsync();
+            return user;
         }
     }
 }

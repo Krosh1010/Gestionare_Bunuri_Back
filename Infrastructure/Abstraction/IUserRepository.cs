@@ -14,5 +14,7 @@ namespace Infrastructure.Abstraction
         Task UpdatePasswordAsync(UserTable user, string newPasswordHash);
         Task SetPasswordResetTokenAsync(UserTable user, string token, DateTime expiry);
         Task<bool> ResetPasswordWithTokenAsync(string email, string token, string newPasswordHash);
+        Task SetEmailVerificationTokenAsync(UserTable user, string token, DateTime expiry);
+        Task<UserTable?> VerifyEmailAsync(string email, string token);
     }
 }

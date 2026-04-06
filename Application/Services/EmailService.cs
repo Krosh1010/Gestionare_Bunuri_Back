@@ -114,5 +114,16 @@ namespace Application.Services
 
             await SendEmailAsync(toEmail, "AssetGuard - Resetare Parolă", htmlBody);
         }
+
+        public async Task SendEmailVerificationAsync(string toEmail, string userName, string verificationToken)
+        {
+            var template = await LoadTemplateAsync("email-verification.html");
+
+            var htmlBody = template
+                .Replace("{{USER_NAME}}", userName)
+                .Replace("{{VERIFICATION_TOKEN}}", verificationToken);
+
+            await SendEmailAsync(toEmail, "AssetGuard - Verificare Email", htmlBody);
+        }
     }
 }

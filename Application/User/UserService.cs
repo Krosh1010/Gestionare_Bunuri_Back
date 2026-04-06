@@ -7,6 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Security.Cryptography;
 
 namespace Application.User
 {
@@ -32,16 +33,51 @@ namespace Application.User
 
             if (!_hash.Verify(dto.Password, user.PasswordHash)) return null;
 
+            if (!user.IsEmailVerified)
+            {
+                
+                var resendToken = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+                var resendExpiry = DateTime.UtcNow.AddMinutes(15);
+                await _userRepository.SetEmailVerificationTokenAsync(user, resendToken, resendExpiry);
+                await _emailService.SendEmailVerificationAsync(user.Email, user.FullName, resendToken);
+                throw new Exception("Email neverificat");
+            }
+
             return GenerateJwtToken(user);
         }
 
-        public async Task<string?> RegisterAsync(UserRegisterDto dto)
+        public async Task<bool> RegisterAsync(UserRegisterDto dto)
         {
-            var exists = await _userRepository.UserExistsByEmailAsync(dto.Email);
-            if (exists) throw new Exception("User existent");
+            var existingUser = await _userRepository.GetUserByEmailAsync(dto.Email);
+
+            if (existingUser != null)
+            {
+                if (existingUser.IsEmailVerified)
+                    throw new Exception("User existent");
+
+                // Utilizatorul există dar nu a verificat email-ul — retrimitem codul
+                var newToken = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+                var newExpiry = DateTime.UtcNow.AddMinutes(15);
+                await _userRepository.SetEmailVerificationTokenAsync(existingUser, newToken, newExpiry);
+                await _emailService.SendEmailVerificationAsync(existingUser.Email, existingUser.FullName, newToken);
+                return true;
+            }
 
             var hashedPassword = _hash.Generate(dto.Password);
             var user = await _userRepository.CreateUserAsync(dto.Email, hashedPassword, dto.FullName);
+
+            var resetToken = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+            var expiry = DateTime.UtcNow.AddMinutes(15);
+            await _userRepository.SetEmailVerificationTokenAsync(user, resetToken, expiry);
+            await _emailService.SendEmailVerificationAsync(user.Email, user.FullName, resetToken);
+
+            return true;
+        }
+
+        public async Task<string?> VerifyEmailAsync(VerifyEmailDto dto)
+        {
+            var user = await _userRepository.VerifyEmailAsync(dto.Email, dto.Token);
+            if (user == null) return null;
 
             return GenerateJwtToken(user);
         }
@@ -73,14 +109,11 @@ namespace Application.User
             var user = await _userRepository.GetUserByEmailAsync(email);
             if (user == null) return false;
 
-            // Generăm un cod de 6 cifre
-            var random = new Random();
-            var resetToken = random.Next(100000, 999999).ToString();
+            var resetToken = (RandomNumberGenerator.GetInt32(100000, 1000000)).ToString();
             var expiry = DateTime.UtcNow.AddMinutes(15);
 
             await _userRepository.SetPasswordResetTokenAsync(user, resetToken, expiry);
 
-            // Trimitem email-ul cu codul de resetare
             await _emailService.SendPasswordResetEmailAsync(user.Email, user.FullName, resetToken);
 
             return true;

@@ -19,29 +19,47 @@ namespace Gestionare_Bunuri_Back.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginDto dto)
         {
-            var token = await _userService.LoginAsync(dto);
-            if (token == null)
-                return Unauthorized(new { message = "Invalid credentials" });
+            try
+            {
+                var token = await _userService.LoginAsync(dto);
+                if (token == null)
+                    return Unauthorized(new { message = "Credențiale invalide." });
 
-            return Ok(new { token });
+                return Ok(new { token });
+            }
+            catch (Exception ex) when (ex.Message == "Email neverificat")
+            {
+                return StatusCode(403, new { message = "Email-ul nu a fost verificat. Verifică-ți inbox-ul." });
+            }
         }
+
         [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] UserRegisterDto dto)
         {
             try
             {
-                var token = await _userService.RegisterAsync(dto);
-                return Ok(new { token });
+                await _userService.RegisterAsync(dto);
+                return Ok(new { message = "Cont creat. Verifică email-ul pentru codul de confirmare." });
             }
             catch (Exception ex)
             {
                 if (ex.Message == "User existent")
-                    return Conflict(new { message = "User already exists" });
+                    return Conflict(new { message = "Există deja un cont cu acest email." });
 
-                // Afișează mesajul real al excepției pentru debugging
                 return StatusCode(500, new { message = ex.Message, stack = ex.StackTrace });
             }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto dto)
+        {
+            var token = await _userService.VerifyEmailAsync(dto);
+            if (token == null)
+                return BadRequest(new { message = "Codul de verificare este invalid sau a expirat." });
+
+            return Ok(new { token });
         }
 
         [AllowAnonymous]
