@@ -13,5 +13,6 @@ namespace Infrastructure.Abstraction
         Task<bool> DeleteSpaceAsync(int spaceId, int ownerId);
         Task<List<SpaceListDto>> GetSpacePathAsync(int spaceId);
         Task<SpaceListDto?> PatchSpaceAsync(int spaceId, int ownerId, SpaceUpdateDto dto);
+        Task<List<SpaceSearchResultDto>> SearchSpacesAsync(int ownerId, string query);
     }
 }

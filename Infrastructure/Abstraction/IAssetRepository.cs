@@ -13,5 +13,6 @@ namespace Infrastructure.Abstraction
         Task<bool> DeleteAssetAsync(int id);
         Task<bool> PatchAssetAsync(int assetId, AssetUpdateDto dto);
         Task<IEnumerable<AssetReadDto>> GetAssetsByUserIdAsync(int userId);
+        Task<AssetReadDto?> GetAssetByBarcodeAsync(string barcode, int userId);
     }
 }

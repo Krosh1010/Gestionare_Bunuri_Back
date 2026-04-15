@@ -154,5 +154,47 @@ namespace Infrastructure.Asset
                 AssetsCount = await _context.Assets.CountAsync(a => a.SpaceId == space.Id)
             };
         }
+
+        public async Task<List<SpaceSearchResultDto>> SearchSpacesAsync(int ownerId, string query)
+        {
+            var allSpaces = await _context.Spaces
+                .Where(s => s.OwnerId == ownerId)
+                .ToListAsync();
+
+            var matched = string.IsNullOrWhiteSpace(query)
+                ? allSpaces
+                : allSpaces.Where(s => s.Name.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            var spaceLookup = allSpaces.ToDictionary(s => s.Id);
+
+            var results = new List<SpaceSearchResultDto>();
+            foreach (var space in matched)
+            {
+                var pathParts = new List<string>();
+                var current = space;
+                while (current != null)
+                {
+                    pathParts.Add(current.Name);
+                    if (current.ParentSpaceId.HasValue && spaceLookup.TryGetValue(current.ParentSpaceId.Value, out var parent))
+                        current = parent;
+                    else
+                        current = null;
+                }
+                pathParts.Reverse();
+
+                results.Add(new SpaceSearchResultDto
+                {
+                    Id = space.Id,
+                    Name = space.Name,
+                    Type = space.Type,
+                    ParentSpaceId = space.ParentSpaceId,
+                    FullPath = string.Join(" > ", pathParts),
+                    ChildrenCount = allSpaces.Count(s => s.ParentSpaceId == space.Id),
+                    AssetsCount = await _context.Assets.CountAsync(a => a.SpaceId == space.Id)
+                });
+            }
+
+            return results;
+        }
     }
 }

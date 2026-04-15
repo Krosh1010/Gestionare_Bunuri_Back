@@ -29,6 +29,7 @@ namespace Infrastructure.Asset
                 Value = dto.Value,
                 PurchaseDate = dto.PurchaseDate,
                 Description = dto.Description,
+                Barcode = dto.Barcode,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -47,6 +48,7 @@ namespace Infrastructure.Asset
                 Value = asset.Value,
                 PurchaseDate = asset.PurchaseDate,
                 Description = asset.Description,
+                Barcode = asset.Barcode,
                 CreatedAt = asset.CreatedAt
             };
         }
@@ -118,6 +120,7 @@ namespace Infrastructure.Asset
                     Value = asset.Value,
                     PurchaseDate = asset.PurchaseDate,
                     Description = asset.Description,
+                    Barcode = asset.Barcode,
                     WarrantyEndDate = asset.Warranty?.EndDate,
                     WarrantyStatus = asset.Warranty?.Status,
                     InsuranceEndDate = asset.Insurance?.EndDate,
@@ -172,6 +175,7 @@ namespace Infrastructure.Asset
                 Value = asset.Value,
                 PurchaseDate = asset.PurchaseDate,
                 Description = asset.Description,
+                Barcode = asset.Barcode,
                 CreatedAt = asset.CreatedAt,
                 WarrantyEndDate = asset.Warranty?.EndDate,
                 WarrantyStatus = asset.Warranty?.Status,
@@ -229,6 +233,8 @@ namespace Infrastructure.Asset
                 asset.PurchaseDate = dto.PurchaseDate.Value;
             if (dto.Description != null)
                 asset.Description = dto.Description;
+            if (dto.BarcodeIsSet)
+                asset.Barcode = dto.Barcode;
 
             await _context.SaveChangesAsync();
             return true;
@@ -259,6 +265,7 @@ namespace Infrastructure.Asset
                     Value = asset.Value,
                     PurchaseDate = asset.PurchaseDate,
                     Description = asset.Description,
+                    Barcode = asset.Barcode,
                     CreatedAt = asset.CreatedAt,
                     WarrantyEndDate = asset.Warranty?.EndDate,
                     WarrantyStatus = asset.Warranty?.Status,
@@ -274,6 +281,19 @@ namespace Infrastructure.Asset
                     CustomTrackerStatus = latestTracker?.Status
                 };
             }).ToList();
+        }
+
+        public async Task<AssetReadDto?> GetAssetByBarcodeAsync(string barcode, int userId)
+        {
+            var assetId = await _context.Assets
+                .Where(a => a.Barcode == barcode && a.Space.OwnerId == userId)
+                .Select(a => (int?)a.Id)
+                .FirstOrDefaultAsync();
+
+            if (assetId == null)
+                return null;
+
+            return await GetAssetByIdAsync(assetId.Value);
         }
     }
 }

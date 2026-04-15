@@ -25,6 +25,9 @@ namespace Domain.DbTables
 
         public string? Description { get; set; }
 
+        [MaxLength(512)]
+        public string? Barcode { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public WarrantyTable? Warranty { get; set; }

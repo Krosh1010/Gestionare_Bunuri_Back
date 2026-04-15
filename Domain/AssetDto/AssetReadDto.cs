@@ -17,6 +17,7 @@ namespace Domain.AssetDto
         public decimal Value { get; set; }
         public DateTime? PurchaseDate { get; set; }
         public string? Description { get; set; }
+        public string? Barcode { get; set; }
         public DateTime CreatedAt { get; set; }
 
         // Adaugă aceste proprietăți:

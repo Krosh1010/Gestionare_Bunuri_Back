@@ -40,5 +40,10 @@ public class SpaceService : ISpaceService
     {
         return await _spaceRepository.PatchSpaceAsync(spaceId, ownerId, dto);
     }
+
+    public async Task<List<SpaceSearchResultDto>> SearchSpacesAsync(int ownerId, string query)
+    {
+        return await _spaceRepository.SearchSpacesAsync(ownerId, query);
+    }
 }
             

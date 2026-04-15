@@ -66,6 +66,18 @@ namespace Gestionare_Bunuri_Back.Controllers
             return Ok(parents);
         }
 
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchSpaces([FromQuery] string query = "")
+        {
+            var userIdString = HttpContext.Items["UserId"] as string;
+            if (string.IsNullOrEmpty(userIdString))
+                return Unauthorized();
+
+            int ownerId = int.Parse(userIdString);
+            var results = await _spaceService.SearchSpacesAsync(ownerId, query);
+            return Ok(results);
+        }
+
         [HttpGet("children/{parentId}")]
         public async Task<IActionResult> GetChildSpaces(int parentId)
         {

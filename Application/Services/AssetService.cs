@@ -43,4 +43,9 @@ public class AssetService : IAssetService
     {
         return await _assetRepository.GetAssetsByUserIdAsync(userId);
     }
+
+    public async Task<AssetReadDto?> GetAssetByBarcodeAsync(string barcode, int userId)
+    {
+        return await _assetRepository.GetAssetByBarcodeAsync(barcode, userId);
+    }
 }

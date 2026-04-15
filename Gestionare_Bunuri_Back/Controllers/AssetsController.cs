@@ -54,5 +54,18 @@ namespace Gestionare_Bunuri_Back.Controllers
                 return NotFound();
             return NoContent();
         }
+
+        [HttpGet("barcode/{barcode}")]
+        public async Task<ActionResult<AssetReadDto>> GetAssetByBarcode(string barcode)
+        {
+            var userIdString = HttpContext.Items["UserId"] as string;
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))
+                return Unauthorized();
+
+            var asset = await _assetService.GetAssetByBarcodeAsync(barcode, userId);
+            if (asset == null)
+                return NotFound();
+            return Ok(asset);
+        }
     }
 }
