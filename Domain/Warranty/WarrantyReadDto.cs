@@ -11,6 +11,8 @@ namespace Domain.Warranty
     {
         public int Id { get; set; }
         public int AssetId { get; set; }
+        public int? SpaceId { get; set; }
+        public string? SpaceName { get; set; }
         public string Provider { get; set; } = null!;
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }

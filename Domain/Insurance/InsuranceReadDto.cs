@@ -11,6 +11,8 @@ namespace Domain.Insurance
     {
         public int Id { get; set; }
         public int AssetId { get; set; }
+        public int? SpaceId { get; set; }
+        public string? SpaceName { get; set; }
         public string Company { get; set; } = null!;
         public decimal InsuredValue { get; set; }
         public DateTime StartDate { get; set; }

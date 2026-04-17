@@ -89,6 +89,46 @@ namespace Application.Services
             return await _documentRepository.DeleteDocumentByAssetAndTypeAsync(assetId, type);
         }
 
+        public async Task<DocumentReadDto> AddDocumentAsync(int assetId, DocumentType type, IFormFile file, int? loanId = null)
+        {
+            var typeFolder = type.ToString().ToLower();
+            var folderPath = Path.Combine(_uploadPath, typeFolder, assetId.ToString());
+
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
+
+            var fileExtension = Path.GetExtension(file.FileName);
+            var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
+            var fullPath = Path.Combine(folderPath, uniqueFileName);
+
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return await _documentRepository.AddDocumentAsync(assetId, type, file.FileName, fullPath, loanId);
+        }
+
+        public async Task<List<DocumentReadDto>> GetDocumentsByAssetAndTypeAsync(int assetId, DocumentType type)
+        {
+            return await _documentRepository.GetDocumentsByAssetAndTypeAsync(assetId, type);
+        }
+
+        public async Task<List<DocumentReadDto>> GetDocumentsByLoanIdAsync(int loanId)
+        {
+            return await _documentRepository.GetDocumentsByLoanIdAsync(loanId);
+        }
+
+        public async Task<bool> DeleteAllDocumentsByAssetAndTypeAsync(int assetId, DocumentType type)
+        {
+            return await _documentRepository.DeleteAllDocumentsByAssetAndTypeAsync(assetId, type);
+        }
+
+        public async Task<bool> DeleteAllDocumentsByLoanIdAsync(int loanId)
+        {
+            return await _documentRepository.DeleteAllDocumentsByLoanIdAsync(loanId);
+        }
+
         private string GetContentType(string fileName)
         {
             var extension = Path.GetExtension(fileName).ToLowerInvariant();

@@ -4,6 +4,7 @@ using Infrastructure.DataBase;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260417110627_AddLoanIdToDocuments")]
+    partial class AddLoanIdToDocuments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -229,9 +232,6 @@ namespace Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("SpaceId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
@@ -239,8 +239,6 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("AssetId")
                         .IsUnique();
-
-                    b.HasIndex("SpaceId");
 
                     b.ToTable("Insurances");
                 });
@@ -503,9 +501,6 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<int?>("SpaceId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
@@ -513,8 +508,6 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("AssetId")
                         .IsUnique();
-
-                    b.HasIndex("SpaceId");
 
                     b.ToTable("Warranties");
                 });
@@ -589,14 +582,7 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.DbTables.SpaceTable", "Space")
-                        .WithMany("Insurances")
-                        .HasForeignKey("SpaceId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.Navigation("Asset");
-
-                    b.Navigation("Space");
                 });
 
             modelBuilder.Entity("Domain.DbTables.InvitationTable", b =>
@@ -692,14 +678,7 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.DbTables.SpaceTable", "Space")
-                        .WithMany("Warranties")
-                        .HasForeignKey("SpaceId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.Navigation("Asset");
-
-                    b.Navigation("Space");
                 });
 
             modelBuilder.Entity("Domain.DbTables.AssetTable", b =>
@@ -725,13 +704,9 @@ namespace Infrastructure.Migrations
 
                     b.Navigation("ChildSpaces");
 
-                    b.Navigation("Insurances");
-
                     b.Navigation("Invitations");
 
                     b.Navigation("SpaceUsers");
-
-                    b.Navigation("Warranties");
                 });
 
             modelBuilder.Entity("Domain.DbTables.UserTable", b =>

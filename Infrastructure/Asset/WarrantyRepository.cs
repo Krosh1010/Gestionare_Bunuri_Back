@@ -21,6 +21,7 @@ namespace Infrastructure.Asset
             var warranty = new WarrantyTable
             {
                 AssetId = dto.AssetId,
+                SpaceId = dto.SpaceId,
                 Provider = dto.Provider,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate
@@ -29,10 +30,16 @@ namespace Infrastructure.Asset
             _context.Warranties.Add(warranty);
             await _context.SaveChangesAsync();
 
+            var spaceName = warranty.SpaceId.HasValue
+                ? (await _context.Spaces.FindAsync(warranty.SpaceId.Value))?.Name
+                : null;
+
             return new WarrantyReadDto
             {
                 Id = warranty.Id,
                 AssetId = warranty.AssetId,
+                SpaceId = warranty.SpaceId,
+                SpaceName = spaceName,
                 Provider = warranty.Provider,
                 StartDate = warranty.StartDate,
                 EndDate = warranty.EndDate,
@@ -42,7 +49,9 @@ namespace Infrastructure.Asset
 
         public async Task<WarrantyReadDto?> GetWarrantyByIdAsync(int id)
         {
-            var warranty = await _context.Warranties.FindAsync(id);
+            var warranty = await _context.Warranties
+                .Include(w => w.Space)
+                .FirstOrDefaultAsync(w => w.Id == id);
             if (warranty == null)
                 return null;
 
@@ -53,6 +62,8 @@ namespace Infrastructure.Asset
             {
                 Id = warranty.Id,
                 AssetId = warranty.AssetId,
+                SpaceId = warranty.SpaceId,
+                SpaceName = warranty.Space?.Name,
                 Provider = warranty.Provider,
                 StartDate = warranty.StartDate,
                 EndDate = warranty.EndDate,
@@ -65,6 +76,7 @@ namespace Infrastructure.Asset
         public async Task<WarrantyReadDto?> GetWarrantyByAssetIdAsync(int assetId)
         {
             var warranty = await _context.Warranties
+                .Include(w => w.Space)
                 .FirstOrDefaultAsync(w => w.AssetId == assetId);
 
             if (warranty == null)
@@ -77,6 +89,8 @@ namespace Infrastructure.Asset
             {
                 Id = warranty.Id,
                 AssetId = warranty.AssetId,
+                SpaceId = warranty.SpaceId,
+                SpaceName = warranty.Space?.Name,
                 Provider = warranty.Provider,
                 StartDate = warranty.StartDate,
                 EndDate = warranty.EndDate,
@@ -113,6 +127,8 @@ namespace Infrastructure.Asset
             if (warranty == null)
                 return null;
 
+            if (dto.SpaceIdIsSet)
+                warranty.SpaceId = dto.SpaceId;
             if (dto.Provider != null)
                 warranty.Provider = dto.Provider;
             if (dto.StartDate.HasValue)
@@ -125,10 +141,16 @@ namespace Infrastructure.Asset
             var document = await _context.Documents
                 .FirstOrDefaultAsync(d => d.AssetId == assetId && d.Type == DocumentType.WARRANTY);
 
+            var spaceName = warranty.SpaceId.HasValue
+                ? (await _context.Spaces.FindAsync(warranty.SpaceId.Value))?.Name
+                : null;
+
             return new WarrantyReadDto
             {
                 Id = warranty.Id,
                 AssetId = warranty.AssetId,
+                SpaceId = warranty.SpaceId,
+                SpaceName = spaceName,
                 Provider = warranty.Provider,
                 StartDate = warranty.StartDate,
                 EndDate = warranty.EndDate,

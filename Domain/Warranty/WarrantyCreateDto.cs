@@ -9,6 +9,7 @@ namespace Domain.Warranty
     public class WarrantyCreateDto
     {
         public int AssetId { get; set; }
+        public int? SpaceId { get; set; }
         public string Provider { get; set; } = null!;
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }

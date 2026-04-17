@@ -44,7 +44,19 @@ namespace Infrastructure.Asset
                 .OrderByDescending(l => l.LoanedAt)
                 .FirstOrDefaultAsync();
 
-            return loan == null ? null : MapToDto(loan, loan.Asset.Name);
+            if (loan == null) return null;
+
+            var documents = await _context.Documents
+                .Where(d => d.LoanId == loan.Id && d.Type == DocumentType.LOAN)
+                .ToListAsync();
+
+            var dto = MapToDto(loan, loan.Asset.Name);
+            dto.Documents = documents.Select(d => new LoanDocumentDto
+            {
+                Id = d.Id,
+                FileName = d.FileName
+            }).ToList();
+            return dto;
         }
 
         public async Task<IEnumerable<LoanReadDto>> GetLoanHistoryByAssetIdAsync(int assetId)
@@ -55,7 +67,24 @@ namespace Infrastructure.Asset
                 .OrderByDescending(l => l.LoanedAt)
                 .ToListAsync();
 
-            return loans.Select(l => MapToDto(l, l.Asset.Name));
+            var loanIds = loans.Select(l => l.Id).ToList();
+            var documents = await _context.Documents
+                .Where(d => d.LoanId != null && loanIds.Contains(d.LoanId.Value) && d.Type == DocumentType.LOAN)
+                .ToListAsync();
+
+            var docsByLoan = documents.GroupBy(d => d.LoanId!.Value)
+                .ToDictionary(g => g.Key, g => g.Select(d => new LoanDocumentDto
+                {
+                    Id = d.Id,
+                    FileName = d.FileName
+                }).ToList());
+
+            return loans.Select(l =>
+            {
+                var dto = MapToDto(l, l.Asset.Name);
+                dto.Documents = docsByLoan.GetValueOrDefault(l.Id, new List<LoanDocumentDto>());
+                return dto;
+            });
         }
 
         public async Task<LoanReadDto?> ReturnLoanAsync(int loanId, LoanReturnDto dto)
@@ -105,6 +134,20 @@ namespace Infrastructure.Asset
             var loan = await _context.Loans.FindAsync(loanId);
             if (loan == null)
                 return false;
+
+            // Ștergem toate documentele asociate acestui împrumut
+            var documents = await _context.Documents
+                .Where(d => d.LoanId == loanId && d.Type == DocumentType.LOAN)
+                .ToListAsync();
+
+            foreach (var document in documents)
+            {
+                if (File.Exists(document.FilePath))
+                    File.Delete(document.FilePath);
+            }
+
+            if (documents.Any())
+                _context.Documents.RemoveRange(documents);
 
             _context.Loans.Remove(loan);
             await _context.SaveChangesAsync();

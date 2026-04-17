@@ -7,6 +7,7 @@ namespace Domain.DbTables
     {
         WARRANTY,
         INSURANCE,
+        LOAN,
         OTHER
     }
 
@@ -28,6 +29,9 @@ namespace Domain.DbTables
 
         [Required, MaxLength(500)]
         public string FilePath { get; set; } = null!;
+
+        public int? LoanId { get; set; }
+        public LoanTable? Loan { get; set; }
 
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
     }

@@ -10,5 +10,10 @@ namespace Infrastructure.Abstraction
         Task<DocumentReadDto?> GetDocumentByIdAsync(int id);
         Task<bool> DeleteDocumentAsync(int id);
         Task<bool> DeleteDocumentByAssetAndTypeAsync(int assetId, DocumentType type);
+        Task<DocumentReadDto> AddDocumentAsync(int assetId, DocumentType type, string fileName, string filePath, int? loanId = null);
+        Task<List<DocumentReadDto>> GetDocumentsByAssetAndTypeAsync(int assetId, DocumentType type);
+        Task<List<DocumentReadDto>> GetDocumentsByLoanIdAsync(int loanId);
+        Task<bool> DeleteAllDocumentsByAssetAndTypeAsync(int assetId, DocumentType type);
+        Task<bool> DeleteAllDocumentsByLoanIdAsync(int loanId);
     }
 }

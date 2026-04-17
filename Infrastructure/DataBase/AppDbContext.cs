@@ -51,18 +51,6 @@ namespace Infrastructure.DataBase
                 .HasForeignKey(su => su.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Asset 1:1 Warranty
-            modelBuilder.Entity<AssetTable>()
-                .HasOne(a => a.Warranty)
-                .WithOne(w => w.Asset)
-                .HasForeignKey<WarrantyTable>(w => w.AssetId);
-
-            // Asset 1:1 Insurance
-            modelBuilder.Entity<AssetTable>()
-                .HasOne(a => a.Insurance)
-                .WithOne(i => i.Asset)
-                .HasForeignKey<InsuranceTable>(i => i.AssetId);
-
             // Set decimal precision for AssetTable.Value
             modelBuilder.Entity<AssetTable>()
                 .Property(a => a.Value)
@@ -100,12 +88,13 @@ namespace Infrastructure.DataBase
                 .WithMany(a => a.Documents)
                 .HasForeignKey(d => d.AssetId)
                 .OnDelete(DeleteBehavior.Cascade);
-            // Warranty -> Asset (Cascade)
-            modelBuilder.Entity<WarrantyTable>()
-                .HasOne(w => w.Asset)
-                .WithOne(a => a.Warranty) // Use WithOne for 1:1 navigation
-                .HasForeignKey<WarrantyTable>(w => w.AssetId)
-                .OnDelete(DeleteBehavior.Cascade);
+
+            // Document -> Loan (optional, NoAction)
+            modelBuilder.Entity<DocumentTable>()
+                .HasOne(d => d.Loan)
+                .WithMany()
+                .HasForeignKey(d => d.LoanId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             // Insurance -> Asset (Cascade)
             modelBuilder.Entity<InsuranceTable>()
@@ -113,6 +102,27 @@ namespace Infrastructure.DataBase
                 .WithOne(a => a.Insurance) // Use WithOne for 1:1 navigation
                 .HasForeignKey<InsuranceTable>(i => i.AssetId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Insurance -> Space (optional, NoAction)
+            modelBuilder.Entity<InsuranceTable>()
+                .HasOne(i => i.Space)
+                .WithMany(s => s.Insurances)
+                .HasForeignKey(i => i.SpaceId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Warranty -> Asset (Cascade)
+            modelBuilder.Entity<WarrantyTable>()
+                .HasOne(w => w.Asset)
+                .WithOne(a => a.Warranty) // Use WithOne for 1:1 navigation
+                .HasForeignKey<WarrantyTable>(w => w.AssetId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Warranty -> Space (optional, NoAction)
+            modelBuilder.Entity<WarrantyTable>()
+                .HasOne(w => w.Space)
+                .WithMany(s => s.Warranties)
+                .HasForeignKey(w => w.SpaceId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             // Invitation -> Space (Cascade)
             modelBuilder.Entity<InvitationTable>()

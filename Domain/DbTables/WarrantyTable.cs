@@ -21,6 +21,9 @@ namespace Domain.DbTables
         public int AssetId { get; set; }
         public AssetTable Asset { get; set; } = null!;
 
+        public int? SpaceId { get; set; }
+        public SpaceTable? Space { get; set; }
+
         [Required, MaxLength(255)]
         public string Provider { get; set; } = null!;
 

@@ -20,7 +20,6 @@ namespace Domain.AssetDto
         public string? Barcode { get; set; }
         public DateTime CreatedAt { get; set; }
 
-        // Adaugă aceste proprietăți:
         public DateTime? WarrantyEndDate { get; set; }
         public WarrantyStatus? WarrantyStatus { get; set; }
 
@@ -33,9 +32,13 @@ namespace Domain.AssetDto
         public DateTime? WarrantyStartDate { get; set; }
         public int? WarrantyDocumentId { get; set; }
         public string? WarrantyDocumentFileName { get; set; }
+        public int? WarrantySpaceId { get; set; }
+        public string? WarrantySpaceName { get; set; }
 
         public int? InsuranceDocumentId { get; set; }
         public string? InsuranceDocumentFileName { get; set; }
+        public int? InsuranceSpaceId { get; set; }
+        public string? InsuranceSpaceName { get; set; }
 
         // CustomTracker info
         public string? CustomTrackerName { get; set; }

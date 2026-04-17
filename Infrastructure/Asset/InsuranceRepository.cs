@@ -21,6 +21,7 @@ namespace Infrastructure.Asset
             var insurance = new InsuranceTable
             {
                 AssetId = dto.AssetId,
+                SpaceId = dto.SpaceId,
                 Company = dto.Company,
                 InsuredValue = dto.InsuredValue,
                 StartDate = dto.StartDate,
@@ -30,10 +31,16 @@ namespace Infrastructure.Asset
             _context.Insurances.Add(insurance);
             await _context.SaveChangesAsync();
 
+            var spaceName = insurance.SpaceId.HasValue
+                ? (await _context.Spaces.FindAsync(insurance.SpaceId.Value))?.Name
+                : null;
+
             return new InsuranceReadDto
             {
                 Id = insurance.Id,
                 AssetId = insurance.AssetId,
+                SpaceId = insurance.SpaceId,
+                SpaceName = spaceName,
                 Company = insurance.Company,
                 InsuredValue = insurance.InsuredValue,
                 StartDate = insurance.StartDate,
@@ -45,6 +52,7 @@ namespace Infrastructure.Asset
         public async Task<InsuranceReadDto?> GetInsuranceByAssetIdAsync(int assetId)
         {
             var insurance = await _context.Insurances
+                .Include(i => i.Space)
                 .FirstOrDefaultAsync(i => i.AssetId == assetId);
             if (insurance == null)
                 return null;
@@ -56,6 +64,8 @@ namespace Infrastructure.Asset
             {
                 Id = insurance.Id,
                 AssetId = insurance.AssetId,
+                SpaceId = insurance.SpaceId,
+                SpaceName = insurance.Space?.Name,
                 Company = insurance.Company,
                 InsuredValue = insurance.InsuredValue,
                 StartDate = insurance.StartDate,
@@ -93,6 +103,8 @@ namespace Infrastructure.Asset
             if (insurance == null)
                 return null;
 
+            if (dto.SpaceIdIsSet)
+                insurance.SpaceId = dto.SpaceId;
             if (dto.Company != null)
                 insurance.Company = dto.Company;
             if (dto.InsuredValue.HasValue)
@@ -107,10 +119,16 @@ namespace Infrastructure.Asset
             var document = await _context.Documents
                 .FirstOrDefaultAsync(d => d.AssetId == assetId && d.Type == DocumentType.INSURANCE);
 
+            var spaceName = insurance.SpaceId.HasValue
+                ? (await _context.Spaces.FindAsync(insurance.SpaceId.Value))?.Name
+                : null;
+
             return new InsuranceReadDto
             {
                 Id = insurance.Id,
                 AssetId = insurance.AssetId,
+                SpaceId = insurance.SpaceId,
+                SpaceName = spaceName,
                 Company = insurance.Company,
                 InsuredValue = insurance.InsuredValue,
                 StartDate = insurance.StartDate,

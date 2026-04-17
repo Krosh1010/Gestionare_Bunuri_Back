@@ -119,5 +119,106 @@ namespace Infrastructure.Asset
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<DocumentReadDto> AddDocumentAsync(int assetId, DocumentType type, string fileName, string filePath, int? loanId = null)
+        {
+            var document = new DocumentTable
+            {
+                AssetId = assetId,
+                Type = type,
+                FileName = fileName,
+                FilePath = filePath,
+                LoanId = loanId,
+                UploadedAt = DateTime.UtcNow
+            };
+
+            _context.Documents.Add(document);
+            await _context.SaveChangesAsync();
+
+            return new DocumentReadDto
+            {
+                Id = document.Id,
+                AssetId = document.AssetId,
+                Type = document.Type,
+                FileName = document.FileName,
+                FilePath = document.FilePath,
+                LoanId = document.LoanId,
+                UploadedAt = document.UploadedAt
+            };
+        }
+
+        public async Task<List<DocumentReadDto>> GetDocumentsByAssetAndTypeAsync(int assetId, DocumentType type)
+        {
+            return await _context.Documents
+                .Where(d => d.AssetId == assetId && d.Type == type)
+                .Select(d => new DocumentReadDto
+                {
+                    Id = d.Id,
+                    AssetId = d.AssetId,
+                    Type = d.Type,
+                    FileName = d.FileName,
+                    FilePath = d.FilePath,
+                    LoanId = d.LoanId,
+                    UploadedAt = d.UploadedAt
+                })
+                .ToListAsync();
+        }
+
+        public async Task<List<DocumentReadDto>> GetDocumentsByLoanIdAsync(int loanId)
+        {
+            return await _context.Documents
+                .Where(d => d.LoanId == loanId && d.Type == DocumentType.LOAN)
+                .Select(d => new DocumentReadDto
+                {
+                    Id = d.Id,
+                    AssetId = d.AssetId,
+                    Type = d.Type,
+                    FileName = d.FileName,
+                    FilePath = d.FilePath,
+                    LoanId = d.LoanId,
+                    UploadedAt = d.UploadedAt
+                })
+                .ToListAsync();
+        }
+
+        public async Task<bool> DeleteAllDocumentsByAssetAndTypeAsync(int assetId, DocumentType type)
+        {
+            var documents = await _context.Documents
+                .Where(d => d.AssetId == assetId && d.Type == type)
+                .ToListAsync();
+
+            if (!documents.Any())
+                return false;
+
+            foreach (var document in documents)
+            {
+                if (File.Exists(document.FilePath))
+                    File.Delete(document.FilePath);
+            }
+
+            _context.Documents.RemoveRange(documents);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteAllDocumentsByLoanIdAsync(int loanId)
+        {
+            var documents = await _context.Documents
+                .Where(d => d.LoanId == loanId && d.Type == DocumentType.LOAN)
+                .ToListAsync();
+
+            if (!documents.Any())
+                return false;
+
+            foreach (var document in documents)
+            {
+                if (File.Exists(document.FilePath))
+                    File.Delete(document.FilePath);
+            }
+
+            _context.Documents.RemoveRange(documents);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

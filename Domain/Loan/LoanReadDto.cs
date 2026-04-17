@@ -12,5 +12,6 @@ namespace Domain.Loan
         public DateTime? ReturnedAt { get; set; }
         public string? ConditionOnReturn { get; set; }
         public bool IsActive => ReturnedAt == null;
+        public List<LoanDocumentDto> Documents { get; set; } = new();
     }
 }

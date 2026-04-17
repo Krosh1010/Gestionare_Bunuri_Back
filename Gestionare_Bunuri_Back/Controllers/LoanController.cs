@@ -15,9 +15,9 @@ namespace Gestionare_Bunuri_Back.Controllers
             _loanService = loanService;
         }
         [HttpPost("create")]
-        public async Task<IActionResult> Create([FromBody] LoanCreateDto dto)
+        public async Task<IActionResult> Create([FromForm] LoanCreateDto dto, List<IFormFile>? documents)
         {
-            var result = await _loanService.CreateLoanAsync(dto);
+            var result = await _loanService.CreateLoanAsync(dto, documents);
             return Ok(result);
         }
         [HttpGet("active/by-asset/{assetId}")]
@@ -44,13 +44,40 @@ namespace Gestionare_Bunuri_Back.Controllers
         }
 
         [HttpPatch("{loanId}")]
-        public async Task<IActionResult> Patch(int loanId, [FromBody] LoanUpdateDto dto)
+        public async Task<IActionResult> Patch(int loanId, [FromForm] LoanUpdateDto dto, List<IFormFile>? documents)
         {
-            var result = await _loanService.PatchLoanAsync(loanId, dto);
+            var result = await _loanService.PatchLoanAsync(loanId, dto, documents);
             if (result == null)
                 return NotFound(new { message = "Împrumutul activ nu a fost găsit." });
             return Ok(result);
         }
+        [HttpGet("document/{documentId}/download")]
+        public async Task<IActionResult> DownloadLoanDocument(int documentId)
+        {
+            var result = await _loanService.DownloadDocumentAsync(documentId);
+            if (result == null)
+                return NotFound();
+            return File(result.Value.fileBytes, result.Value.contentType, result.Value.fileName);
+        }
+
+        [HttpDelete("document/{documentId}")]
+        public async Task<IActionResult> DeleteLoanDocument(int documentId)
+        {
+            var deleted = await _loanService.DeleteDocumentAsync(documentId);
+            if (!deleted)
+                return NotFound();
+            return NoContent();
+        }
+
+        [HttpDelete("{loanId}/documents")]
+        public async Task<IActionResult> DeleteAllLoanDocuments(int loanId)
+        {
+            var deleted = await _loanService.DeleteAllDocumentsAsync(loanId);
+            if (!deleted)
+                return NotFound();
+            return NoContent();
+        }
+
         [HttpDelete("{loanId}")]
         public async Task<IActionResult> Delete(int loanId)
         {

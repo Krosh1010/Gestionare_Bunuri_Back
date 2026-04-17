@@ -35,6 +35,8 @@ namespace Domain.DbTables
 
         public ICollection<SpaceUserTable> SpaceUsers { get; set; } = new List<SpaceUserTable>();
         public ICollection<AssetTable> Assets { get; set; } = new List<AssetTable>();
+        public ICollection<WarrantyTable> Warranties { get; set; } = new List<WarrantyTable>();
+        public ICollection<InsuranceTable> Insurances { get; set; } = new List<InsuranceTable>();
         public ICollection<InvitationTable> Invitations { get; set; } = new List<InvitationTable>();
     }
 }

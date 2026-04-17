@@ -146,8 +146,8 @@ namespace Infrastructure.Asset
         {
             var asset = await _context.Assets
                 .Include(a => a.Space)
-                .Include(a => a.Warranty)
-                .Include(a => a.Insurance)
+                .Include(a => a.Warranty).ThenInclude(w => w.Space)
+                .Include(a => a.Insurance).ThenInclude(i => i.Space)
                 .Include(a => a.CustomTrackers)
                 .Include(a => a.Documents)
                 .Include(a => a.Loans)
@@ -183,6 +183,8 @@ namespace Infrastructure.Asset
                 WarrantyStartDate = asset.Warranty?.StartDate,
                 WarrantyDocumentId = warrantyDoc?.Id,
                 WarrantyDocumentFileName = warrantyDoc?.FileName,
+                WarrantySpaceId = asset.Warranty?.SpaceId,
+                WarrantySpaceName = asset.Warranty?.Space?.Name,
                 InsuranceEndDate = asset.Insurance?.EndDate,
                 InsuranceStatus = asset.Insurance?.Status,
                 InsuranceValue = asset.Insurance?.InsuredValue,
@@ -190,6 +192,8 @@ namespace Infrastructure.Asset
                 InsuranceStartDate = asset.Insurance?.StartDate,
                 InsuranceDocumentId = insuranceDoc?.Id,
                 InsuranceDocumentFileName = insuranceDoc?.FileName,
+                InsuranceSpaceId = asset.Insurance?.SpaceId,
+                InsuranceSpaceName = asset.Insurance?.Space?.Name,
                 CustomTrackerName = latestTracker?.Name,
                 CustomTrackerEndDate = latestTracker?.EndDate,
                 CustomTrackerStatus = latestTracker?.Status,
